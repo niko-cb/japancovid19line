@@ -46,8 +46,8 @@ func Scrape() []*model.PrefectureData {
 func dataToModel(data []string) []*model.PrefectureData {
 	var dataSlice []*model.PrefectureData
 	for i := 5; i < len(data); i += 5 {
-		covidDa := model.NewPrefectureData(data[i], data[i+1], data[i+2], data[i+3], data[i+4])
-		dataSlice = append(dataSlice, covidDa)
+		covidData := model.NewPrefectureData(data[i], data[i+1], data[i+2], data[i+3], data[i+4])
+		dataSlice = append(dataSlice, covidData)
 	}
 	insertOrReinsertToDatastore(dataSlice)
 	return dataSlice
@@ -60,7 +60,7 @@ func insertOrReinsertToDatastore(data []*model.PrefectureData) {
 		return
 	}
 
-	kind := "CovidData"
+	kind := utils.DatastoreKind()
 
 	for _, jpd := range data {
 		name := jpd.Prefecture

@@ -43,6 +43,7 @@ func main() {
 	//Routes
 	r.Route(handler.APIPathPrefix, func(r chi.Router) {
 		r.Route(handler.ScrapeDataAPIBasePath, handler.ScrapeData)
+		r.Route(handler.LookupAPIBasePath, handler.LookupPrefecture)
 	})
 
 	// Choose port
