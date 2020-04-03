@@ -12,9 +12,9 @@ import (
 
 const (
 	// Article URL for current day
-	covidDataURL = "https://www.mhlw.go.jp/stf/newpage_10668.html"
+	covidDataURL = "https://www.mhlw.go.jp/stf/newpage_10688.html"
 	// Element for the table that contains the japanese covid data table
-	dataTableElementSelector = "#content > div.l-contentBody > div > div.l-contentMain > div:nth-child(4) > div > table:nth-child(107)"
+	dataTableElementSelector = "#content > div.l-contentBody > div > div.l-contentMain > div:nth-child(4) > div > table:nth-child(106)"
 	// element for each specific row in the japanese covid data table
 	dataElementSelector = "tbody > tr > td"
 )
