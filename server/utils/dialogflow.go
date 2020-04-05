@@ -1,16 +1,18 @@
 package utils
 
 import (
-	"cloud.google.com/go/datastore"
 	dialogflow "cloud.google.com/go/dialogflow/apiv2"
 	"context"
 	"fmt"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/niko-cb/covid19datascraper/server/model"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 	"log"
 	"strconv"
+	"strings"
+	"time"
 )
 
 type DialogflowProcessor struct {
@@ -114,20 +116,8 @@ func extractDialogFlowEntities(p *structpb.Value) (extractedEntity string) {
 	}
 }
 
-func (dp *DialogflowProcessor) CreateIntents() error {
-	dsClient, err := NewDSClient()
-	if err != nil {
-		return err
-	}
-	kind := DatastoreKind()
-	var pData []*model.PrefectureData
-	q := datastore.NewQuery(kind)
-	if _, err := dsClient.GetAll(context.Background(), q, &pData); err != nil {
-		log.Printf("errored on get: %v", err)
-	}
-
+func (dp *DialogflowProcessor) CreateOrRecreateIntents() error {
 	ctx := dp.ctx
-
 	intentsClient, clientErr := dialogflow.NewIntentsClient(ctx, option.WithCredentialsFile(dp.authJSONFilePath))
 	if clientErr != nil {
 		return clientErr
@@ -137,12 +127,41 @@ func (dp *DialogflowProcessor) CreateIntents() error {
 	projectID := "japancovid19"
 	parent := fmt.Sprintf("projects/%s/agent", projectID)
 
+	if err := deleteIntents(ctx, intentsClient, projectID, parent); err != nil {
+		return err
+	}
+
+	if err := addPrefectureDataIntents(ctx, intentsClient, parent); err != nil {
+		return err
+	}
+
+	if err := addCoronavirusSymptomsIntent(ctx, intentsClient, parent); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func addPrefectureDataIntents(ctx context.Context, intentsClient *dialogflow.IntentsClient, parent string) error {
+	dsClient, err := NewDSClient()
+	if err != nil {
+		return err
+	}
+	pData, err := model.GetPrefectureData(ctx, dsClient, DatastoreKind())
+	if err != nil {
+		return err
+	}
+	sd, err := model.GetSourceDate(ctx, dsClient, DatastoreDateKind())
+	if err != nil {
+		return err
+	}
 	for _, p := range pData {
+		time.Sleep(1000)
 		displayName := p.Prefecture
 		var trainingPhraseParts []string
 		trainingPhraseParts = append(trainingPhraseParts, displayName)
 		var messageTexts []string
-		messageTexts = append(messageTexts, "都道府県名:   "+displayName+"\nＰＣＲ検査陽性者:   "+p.PCRTests+"\n現在は入院等:   "+p.Hospitalized+"\n退院者:   "+p.Discharged+"\n死亡者:   "+p.Deaths)
+		messageTexts = append(messageTexts, sd.Date+"までの情報です\n\n"+"都道府県名:   "+displayName+"\nＰＣＲ検査陽性者:   "+p.PCRTests+"\n現在は入院等:   "+p.Hospitalized+"\n退院者:   "+p.Discharged+"\n死亡者:   "+p.Deaths)
 
 		var targetTrainingPhrases []*dialogflowpb.Intent_TrainingPhrase
 		var targetTrainingPhraseParts []*dialogflowpb.Intent_TrainingPhrase_Part
@@ -163,6 +182,79 @@ func (dp *DialogflowProcessor) CreateIntents() error {
 
 		_, requestErr := intentsClient.CreateIntent(ctx, &request)
 		log.Println(&request)
+		if requestErr != nil {
+			return requestErr
+		}
+	}
+	return nil
+}
+
+func addCoronavirusSymptomsIntent(ctx context.Context, intentsClient *dialogflow.IntentsClient, parent string) error {
+	cs := model.GetCoronavirusSymptoms()
+
+	commonString := strings.Join(cs.Common, ", ")
+	rareString := strings.Join(cs.Rare, ", ")
+	severeString := strings.Join(cs.Severe, ", ")
+
+	displayName := "症状"
+	var trainingPhraseParts []string
+	trainingPhraseParts = append(trainingPhraseParts, displayName)
+	var messageTexts []string
+	messageTexts = append(messageTexts, "症状\n\n"+"初期症状: "+commonString+"\n\n"+"人によっての症状: "+rareString+"\n\n"+"重篤な症状: "+severeString)
+
+	var targetTrainingPhrases []*dialogflowpb.Intent_TrainingPhrase
+	var targetTrainingPhraseParts []*dialogflowpb.Intent_TrainingPhrase_Part
+	for _, partString := range trainingPhraseParts {
+		part := dialogflowpb.Intent_TrainingPhrase_Part{Text: partString}
+		targetTrainingPhraseParts = []*dialogflowpb.Intent_TrainingPhrase_Part{&part}
+		targetTrainingPhrase := dialogflowpb.Intent_TrainingPhrase{Type: dialogflowpb.Intent_TrainingPhrase_TYPE_UNSPECIFIED, Parts: targetTrainingPhraseParts}
+		targetTrainingPhrases = append(targetTrainingPhrases, &targetTrainingPhrase)
+	}
+
+	intentMessageTexts := dialogflowpb.Intent_Message_Text{Text: messageTexts}
+	wrappedIntentMessageTexts := dialogflowpb.Intent_Message_Text_{Text: &intentMessageTexts}
+	intentMessage := dialogflowpb.Intent_Message{Message: &wrappedIntentMessageTexts}
+
+	target := dialogflowpb.Intent{DisplayName: displayName, WebhookState: dialogflowpb.Intent_WEBHOOK_STATE_UNSPECIFIED, TrainingPhrases: targetTrainingPhrases, Messages: []*dialogflowpb.Intent_Message{&intentMessage}}
+
+	request := dialogflowpb.CreateIntentRequest{Parent: parent, Intent: &target}
+
+	_, requestErr := intentsClient.CreateIntent(ctx, &request)
+	log.Println(&request)
+	if requestErr != nil {
+		return requestErr
+	}
+	return nil
+}
+
+func listIntents(ctx context.Context, intentsClient *dialogflow.IntentsClient, parent string) ([]*dialogflowpb.Intent, error) {
+
+	request := dialogflowpb.ListIntentsRequest{Parent: parent}
+
+	intentIterator := intentsClient.ListIntents(ctx, &request)
+	var intents []*dialogflowpb.Intent
+
+	for intent, status := intentIterator.Next(); status != iterator.Done; {
+		intents = append(intents, intent)
+		intent, status = intentIterator.Next()
+	}
+
+	return intents, nil
+}
+
+func deleteIntents(ctx context.Context, intentsClient *dialogflow.IntentsClient, projectID, parent string) error {
+	dfIntents, err := listIntents(ctx, intentsClient, parent)
+	if err != nil {
+		return err
+	}
+	for _, intent := range dfIntents {
+		time.Sleep(1000)
+		route := strings.Split(intent.GetName(), "/")
+		intentID := route[len(route)-1]
+		targetPath := fmt.Sprintf("projects/%s/agent/intents/%s", projectID, intentID)
+		request := dialogflowpb.DeleteIntentRequest{Name: targetPath}
+
+		requestErr := intentsClient.DeleteIntent(ctx, &request)
 		if requestErr != nil {
 			return requestErr
 		}

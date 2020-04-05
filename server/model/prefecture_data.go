@@ -1,5 +1,10 @@
 package model
 
+import (
+	"cloud.google.com/go/datastore"
+	"context"
+)
+
 type PrefectureData struct {
 	Prefecture   string `json:"prefecture"`
 	PCRTests     string `json:"pcr_tests"`
@@ -18,4 +23,13 @@ func NewPrefectureData(pref, pcr, hos, dis, deaths string) *PrefectureData {
 		Discharged:   dis,
 		Deaths:       deaths,
 	}
+}
+
+func GetPrefectureData(ctx context.Context, dsClient *datastore.Client, kind string) ([]*PrefectureData, error) {
+	var pData []*PrefectureData
+	q := datastore.NewQuery(kind)
+	if _, err := dsClient.GetAll(ctx, q, &pData); err != nil {
+		return nil, err
+	}
+	return pData, nil
 }

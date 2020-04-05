@@ -18,3 +18,7 @@ func NewDSClient() (*datastore.Client, error) {
 func DatastoreKind() string {
 	return "CovidData"
 }
+
+func DatastoreDateKind() string {
+	return "SourceDate"
+}

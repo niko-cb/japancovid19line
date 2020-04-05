@@ -57,9 +57,6 @@ func dialogflowTest(w http.ResponseWriter, r *http.Request) {
 	render.Status(r, http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
-	//if err := render.Render(w, r, newPrefectureDataRes(jpd)); err != nil {
-	//	_ = render.Render(w, r, utils.ErrRender(ctx, err))
-	//}
 }
 
 func createDialogflowIntents(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +69,7 @@ func createDialogflowIntents(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	err = dp.CreateIntents()
+	err = dp.CreateOrRecreateIntents()
 	if err != nil {
 		log.Println(err.Error())
 	}
