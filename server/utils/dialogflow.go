@@ -161,23 +161,9 @@ func addPrefectureDataIntents(ctx context.Context, intentsClient *dialogflow.Int
 		var trainingPhraseParts []string
 		trainingPhraseParts = append(trainingPhraseParts, displayName)
 		var messageTexts []string
-		messageTexts = append(messageTexts, sd.Date+"までの情報です\n\n"+"都道府県名:   "+displayName+"\n検査陽性者:   "+p.Cases+"\n回復者:   "+p.Recovered+"\n死:   "+p.Deaths)
-		var targetTrainingPhrases []*dialogflowpb.Intent_TrainingPhrase
-		var targetTrainingPhraseParts []*dialogflowpb.Intent_TrainingPhrase_Part
-		for _, partString := range trainingPhraseParts {
-			part := dialogflowpb.Intent_TrainingPhrase_Part{Text: partString}
-			targetTrainingPhraseParts = []*dialogflowpb.Intent_TrainingPhrase_Part{&part}
-			targetTrainingPhrase := dialogflowpb.Intent_TrainingPhrase{Type: dialogflowpb.Intent_TrainingPhrase_TYPE_UNSPECIFIED, Parts: targetTrainingPhraseParts}
-			targetTrainingPhrases = append(targetTrainingPhrases, &targetTrainingPhrase)
-		}
+		messageTexts = append(messageTexts, sd.Date+"までの情報です\n\n"+"都道府県名:   "+displayName+"\n検査陽性者:   "+p.Cases+"\n回復者:   "+p.Recovered+"\n死者:   "+p.Deaths)
 
-		intentMessageTexts := dialogflowpb.Intent_Message_Text{Text: messageTexts}
-		wrappedIntentMessageTexts := dialogflowpb.Intent_Message_Text_{Text: &intentMessageTexts}
-		intentMessage := dialogflowpb.Intent_Message{Message: &wrappedIntentMessageTexts}
-
-		target := dialogflowpb.Intent{DisplayName: displayName, WebhookState: dialogflowpb.Intent_WEBHOOK_STATE_UNSPECIFIED, TrainingPhrases: targetTrainingPhrases, Messages: []*dialogflowpb.Intent_Message{&intentMessage}}
-
-		request := dialogflowpb.CreateIntentRequest{Parent: parent, Intent: &target}
+		request := createDialogflowIntent(displayName, parent, trainingPhraseParts, messageTexts)
 
 		_, requestErr := intentsClient.CreateIntent(ctx, &request)
 		log.Println(&request)
@@ -200,23 +186,7 @@ func addCoronavirusSymptomsIntent(ctx context.Context, intentsClient *dialogflow
 	trainingPhraseParts = append(trainingPhraseParts, displayName)
 	var messageTexts []string
 	messageTexts = append(messageTexts, "症状\n\n"+"初期症状: "+commonString+"\n\n"+"人によっての症状: "+rareString+"\n\n"+"重篤な症状: "+severeString)
-
-	var targetTrainingPhrases []*dialogflowpb.Intent_TrainingPhrase
-	var targetTrainingPhraseParts []*dialogflowpb.Intent_TrainingPhrase_Part
-	for _, partString := range trainingPhraseParts {
-		part := dialogflowpb.Intent_TrainingPhrase_Part{Text: partString}
-		targetTrainingPhraseParts = []*dialogflowpb.Intent_TrainingPhrase_Part{&part}
-		targetTrainingPhrase := dialogflowpb.Intent_TrainingPhrase{Type: dialogflowpb.Intent_TrainingPhrase_TYPE_UNSPECIFIED, Parts: targetTrainingPhraseParts}
-		targetTrainingPhrases = append(targetTrainingPhrases, &targetTrainingPhrase)
-	}
-
-	intentMessageTexts := dialogflowpb.Intent_Message_Text{Text: messageTexts}
-	wrappedIntentMessageTexts := dialogflowpb.Intent_Message_Text_{Text: &intentMessageTexts}
-	intentMessage := dialogflowpb.Intent_Message{Message: &wrappedIntentMessageTexts}
-
-	target := dialogflowpb.Intent{DisplayName: displayName, WebhookState: dialogflowpb.Intent_WEBHOOK_STATE_UNSPECIFIED, TrainingPhrases: targetTrainingPhrases, Messages: []*dialogflowpb.Intent_Message{&intentMessage}}
-
-	request := dialogflowpb.CreateIntentRequest{Parent: parent, Intent: &target}
+	request := createDialogflowIntent(displayName, parent, trainingPhraseParts, messageTexts)
 
 	_, requestErr := intentsClient.CreateIntent(ctx, &request)
 	log.Println(&request)
@@ -259,6 +229,25 @@ func deleteIntents(ctx context.Context, intentsClient *dialogflow.IntentsClient,
 		}
 	}
 	return nil
+}
+
+func createDialogflowIntent(displayName, parent string, trainingPhraseParts, messageTexts []string) dialogflowpb.CreateIntentRequest {
+	var targetTrainingPhrases []*dialogflowpb.Intent_TrainingPhrase
+	var targetTrainingPhraseParts []*dialogflowpb.Intent_TrainingPhrase_Part
+	for _, partString := range trainingPhraseParts {
+		part := dialogflowpb.Intent_TrainingPhrase_Part{Text: partString}
+		targetTrainingPhraseParts = []*dialogflowpb.Intent_TrainingPhrase_Part{&part}
+		targetTrainingPhrase := dialogflowpb.Intent_TrainingPhrase{Type: dialogflowpb.Intent_TrainingPhrase_TYPE_UNSPECIFIED, Parts: targetTrainingPhraseParts}
+		targetTrainingPhrases = append(targetTrainingPhrases, &targetTrainingPhrase)
+	}
+
+	intentMessageTexts := dialogflowpb.Intent_Message_Text{Text: messageTexts}
+	wrappedIntentMessageTexts := dialogflowpb.Intent_Message_Text_{Text: &intentMessageTexts}
+	intentMessage := dialogflowpb.Intent_Message{Message: &wrappedIntentMessageTexts}
+
+	target := dialogflowpb.Intent{DisplayName: displayName, WebhookState: dialogflowpb.Intent_WEBHOOK_STATE_UNSPECIFIED, TrainingPhrases: targetTrainingPhrases, Messages: []*dialogflowpb.Intent_Message{&intentMessage}}
+
+	return dialogflowpb.CreateIntentRequest{Parent: parent, Intent: &target}
 }
 
 func NewDialogflowSession(projectID, authJSONFilePath, lang, timeZone string) (DialogflowProcessor, error) {
