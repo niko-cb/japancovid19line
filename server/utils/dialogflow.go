@@ -119,7 +119,7 @@ func extractDialogFlowEntities(p *structpb.Value) (extractedEntity string) {
 
 func (dp *DialogflowProcessor) CreateOrRecreateIntents() error {
 	ctx := dp.ctx
-	intentsClient, clientErr := dialogflow.NewIntentsClient(ctx, option.WithCredentialsFile(dp.authJSONFilePath))
+	intentsClient, clientErr := dialogflow.NewIntentsClient(ctx, option.WithCredentialsJSON([]byte(dp.authJSON)))
 	if clientErr != nil {
 		return clientErr
 	}
