@@ -156,13 +156,12 @@ func addPrefectureDataIntents(ctx context.Context, intentsClient *dialogflow.Int
 		return err
 	}
 	for _, p := range pData {
-		time.Sleep(1000)
+		time.Sleep(1 * time.Second)
 		displayName := p.Prefecture
 		var trainingPhraseParts []string
 		trainingPhraseParts = append(trainingPhraseParts, displayName)
 		var messageTexts []string
-		messageTexts = append(messageTexts, sd.Date+"までの情報です\n\n"+"都道府県名:   "+displayName+"\nＰＣＲ検査陽性者:   "+p.PCRTests+"\n現在は入院等:   "+p.Hospitalized+"\n退院者:   "+p.Discharged+"\n死亡者:   "+p.Deaths)
-
+		messageTexts = append(messageTexts, sd.Date+"までの情報です\n\n"+"都道府県名:   "+displayName+"\n検査陽性者:   "+p.Cases+"\n回復者:   "+p.Recovered+"\n死:   "+p.Deaths)
 		var targetTrainingPhrases []*dialogflowpb.Intent_TrainingPhrase
 		var targetTrainingPhraseParts []*dialogflowpb.Intent_TrainingPhrase_Part
 		for _, partString := range trainingPhraseParts {
@@ -248,7 +247,7 @@ func deleteIntents(ctx context.Context, intentsClient *dialogflow.IntentsClient,
 		return err
 	}
 	for _, intent := range dfIntents {
-		time.Sleep(1000)
+		time.Sleep(1 * time.Second)
 		route := strings.Split(intent.GetName(), "/")
 		intentID := route[len(route)-1]
 		targetPath := fmt.Sprintf("projects/%s/agent/intents/%s", projectID, intentID)

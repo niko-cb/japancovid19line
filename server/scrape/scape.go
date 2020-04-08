@@ -8,50 +8,75 @@ import (
 	"github.com/niko-cb/covid19datascraper/server/model"
 	"github.com/niko-cb/covid19datascraper/server/utils"
 	"log"
+	"time"
 )
 
 const (
 	// Article URL for current day
-	covidDataURL = "https://www.mhlw.go.jp/stf/newpage_10688.html"
+	covidDataURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRri4r42DHwMHePjJfYN-qEWhGvKeOQullBtEzfle15i-xAsm9ZgV8oMxQNhPRO1CId39BPnn1IO5YO/pubhtml#"
 	// Element for the table that contains the japanese covid data table
-	dataTableElementSelector = "#content > div.l-contentBody > div > div.l-contentMain > div:nth-child(4) > div > table:nth-child(106)"
+	dataTableElementSelector = "#1399411442 > div > table > tbody"
 	// element for each specific row in the japanese covid data table
-	dataElementSelector = "tbody > tr > td"
+	dataElementSelector = "tr"
 	// element for the current data's date of publication
-	dataSourceDateSelector = "#content > div.l-contentBody > div > div.l-contentMain > div:nth-child(4) > div"
+	dataSourceDateSelector = "#434907293 > div > table > tbody > tr:nth-child(20)"
 )
 
 func Scrape() []*model.PrefectureData {
 	c := colly.NewCollector()
-	var fullCovidArray []string
+	var covidData []string
+
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL)
 	})
+
+	c.SetRequestTimeout(5 * time.Minute)
+
 	// gets table data
 	c.OnHTML(dataTableElementSelector, func(e *colly.HTMLElement) {
 		e.ForEach(dataElementSelector, func(_ int, e *colly.HTMLElement) {
-			var data string
-			data = e.ChildText("font")
-			if data == "" {
-				return
+			var pref string
+			var cases string
+			var rec string
+			var deaths string
+			pref = e.ChildText("td:nth-child(3)")
+			cases = e.ChildText("td:nth-child(4)")
+			if cases == "" {
+				cases = "0"
 			}
-			fullCovidArray = append(fullCovidArray, data)
+			rec = e.ChildText("td:nth-child(5)")
+			if rec == "" {
+				rec = "0"
+			}
+			deaths = e.ChildText("td:nth-child(6)")
+			if deaths == "" {
+				deaths = "0"
+			}
+			covidData = append(covidData, pref)
+			covidData = append(covidData, cases)
+			covidData = append(covidData, rec)
+			covidData = append(covidData, deaths)
 		})
 	})
 
 	var date string
 	c.OnHTML(dataSourceDateSelector, func(e *colly.HTMLElement) {
-		date = e.ChildText("u:nth-child(50)")
+		date = e.ChildText("td:nth-child(6)")
 	})
 
-	c.Visit(covidDataURL)
-	return formatData(fullCovidArray, date)
+	err := c.Visit(covidDataURL)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	return formatData(covidData, date)
 }
 
 func formatData(data []string, date string) []*model.PrefectureData {
 	var dataSlice []*model.PrefectureData
-	for i := 5; i < len(data); i += 5 {
-		covidData := model.NewPrefectureData(data[i], data[i+1], data[i+2], data[i+3], data[i+4])
+	// Skip the headers for the table (start i at 12)
+	for i := 12; i < len(data); i += 4 {
+		covidData := model.NewPrefectureData(data[i], data[i+1], data[i+2], data[i+3])
 		dataSlice = append(dataSlice, covidData)
 	}
 	insertOrReinsertToDatastore(dataSlice, date)
