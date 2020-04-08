@@ -25,7 +25,6 @@ func updateData(w http.ResponseWriter, r *http.Request) {
 	jpd := scrape.Scrape()
 	dp, err := utils.NewDialogflowSession(
 		"japancovid19",
-		"./dialogflowcredentials.json",
 		"ja",
 		"Japan/Tokyo")
 	if err != nil {

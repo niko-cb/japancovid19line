@@ -10,6 +10,7 @@ import (
 	"google.golang.org/api/option"
 	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -250,7 +251,8 @@ func createDialogflowIntent(displayName, parent string, trainingPhraseParts, mes
 	return dialogflowpb.CreateIntentRequest{Parent: parent, Intent: &target}
 }
 
-func NewDialogflowSession(projectID, authJSONFilePath, lang, timeZone string) (DialogflowProcessor, error) {
+func NewDialogflowSession(projectID, lang, timeZone string) (DialogflowProcessor, error) {
+	authJSONFilePath := os.Getenv("DIALOGFLOW_KEYFILE_JSON")
 	err := dp.init(projectID, authJSONFilePath, lang, timeZone)
 	if err != nil {
 		log.Fatalf("Failed to initiate dialogflow")
