@@ -4,11 +4,13 @@ import (
 	"cloud.google.com/go/datastore"
 	"context"
 	"google.golang.org/api/option"
+	"os"
 )
 
 func NewDSClient() (*datastore.Client, error) {
 	ctx := context.Background()
-	if c, err := datastore.NewClient(ctx, "japancovid19", option.WithCredentialsFile("datastorecredentials.json")); err != nil {
+	dsJSON := os.Getenv("DATASTORE_CRED_JSON")
+	if c, err := datastore.NewClient(ctx, "japancovid19", option.WithCredentialsJSON([]byte(dsJSON))); err != nil {
 		return nil, err
 	} else {
 		return c, nil
