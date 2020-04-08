@@ -17,12 +17,12 @@ import (
 )
 
 type DialogflowProcessor struct {
-	projectID        string
-	authJSONFilePath string
-	lang             string
-	timeZone         string
-	sessionClient    *dialogflow.SessionsClient
-	ctx              context.Context
+	projectID     string
+	authJSON      string
+	lang          string
+	timeZone      string
+	sessionClient *dialogflow.SessionsClient
+	ctx           context.Context
 }
 
 type NLPResponse struct {
@@ -35,12 +35,12 @@ var dp DialogflowProcessor
 
 func (dp *DialogflowProcessor) init(a ...string) (err error) {
 	dp.projectID = a[0]
-	dp.authJSONFilePath = a[1]
+	dp.authJSON = a[1]
 	dp.lang = a[2]
 	dp.timeZone = a[3]
 
 	dp.ctx = context.Background()
-	sessionClient, err := dialogflow.NewSessionsClient(dp.ctx, option.WithCredentialsFile(dp.authJSONFilePath))
+	sessionClient, err := dialogflow.NewSessionsClient(dp.ctx, option.WithCredentialsJSON([]byte(dp.authJSON)))
 	if err != nil {
 		log.Fatal("Failed to authenticate with Dialogflow")
 	}
