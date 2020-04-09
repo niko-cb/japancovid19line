@@ -34,15 +34,16 @@ type NLPResponse struct {
 var dp DialogflowProcessor
 
 func (dp *DialogflowProcessor) init() (err error) {
-	dp.projectID = os.Getenv("DIALOGFLOW_KEYFILE_JSON")
-	dp.authJSON = os.Getenv("PROJECT_ID")
+	dp.projectID = os.Getenv("PROJECT_ID")
+	dp.authJSON = os.Getenv("DIALOGFLOW_KEYFILE_JSON")
 	dp.lang = "ja"
 	dp.timeZone = "Japan/Tokyo"
 
 	dp.ctx = context.Background()
 	sessionClient, err := dialogflow.NewSessionsClient(dp.ctx, option.WithCredentialsJSON([]byte(dp.authJSON)))
 	if err != nil {
-		log.Fatal("Failed to authenticate with Dialogflow")
+		log.Printf("JSON: \n %v", dp.authJSON)
+		log.Fatalf("Failed to authenticate with Dialogflow: %v", err)
 	}
 
 	dp.sessionClient = sessionClient
