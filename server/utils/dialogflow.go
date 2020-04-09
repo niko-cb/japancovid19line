@@ -42,7 +42,6 @@ func (dp *DialogflowProcessor) init() (err error) {
 	dp.ctx = context.Background()
 	sessionClient, err := dialogflow.NewSessionsClient(dp.ctx, option.WithCredentialsJSON([]byte(dp.authJSON)))
 	if err != nil {
-		log.Printf("JSON: \n %v", dp.authJSON)
 		log.Fatalf("Failed to authenticate with Dialogflow: %v", err)
 	}
 
