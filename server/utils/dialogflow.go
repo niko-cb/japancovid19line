@@ -33,11 +33,11 @@ type NLPResponse struct {
 
 var dp DialogflowProcessor
 
-func (dp *DialogflowProcessor) init(a ...string) (err error) {
-	dp.projectID = a[0]
-	dp.authJSON = a[1]
-	dp.lang = a[2]
-	dp.timeZone = a[3]
+func (dp *DialogflowProcessor) init() (err error) {
+	dp.projectID = os.Getenv("DIALOGFLOW_KEYFILE_JSON")
+	dp.authJSON = os.Getenv("PROJECT_ID")
+	dp.lang = "ja"
+	dp.timeZone = "Japan/Tokyo"
 
 	dp.ctx = context.Background()
 	sessionClient, err := dialogflow.NewSessionsClient(dp.ctx, option.WithCredentialsJSON([]byte(dp.authJSON)))
@@ -125,10 +125,9 @@ func (dp *DialogflowProcessor) CreateOrRecreateIntents() error {
 	}
 	defer intentsClient.Close()
 
-	projectID := "japancovid19"
-	parent := fmt.Sprintf("projects/%s/agent", projectID)
+	parent := fmt.Sprintf("projects/%s/agent", dp.projectID)
 
-	if err := deleteIntents(ctx, intentsClient, projectID, parent); err != nil {
+	if err := deleteIntents(ctx, intentsClient, dp.projectID, parent); err != nil {
 		return err
 	}
 
@@ -251,9 +250,8 @@ func createDialogflowIntent(displayName, parent string, trainingPhraseParts, mes
 	return dialogflowpb.CreateIntentRequest{Parent: parent, Intent: &target}
 }
 
-func NewDialogflowSession(projectID, lang, timeZone string) (DialogflowProcessor, error) {
-	authJSONFilePath := os.Getenv("DIALOGFLOW_KEYFILE_JSON")
-	err := dp.init(projectID, authJSONFilePath, lang, timeZone)
+func NewDialogflowSession() (DialogflowProcessor, error) {
+	err := dp.init()
 	if err != nil {
 		log.Fatalf("Failed to initiate dialogflow")
 	}

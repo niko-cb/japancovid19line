@@ -4,6 +4,7 @@ const (
 	APIPathPrefix = "/api"
 )
 
+// TODO: Create map for prefectures
 func PrefectureMap() map[string]string {
 	prefMap := make(map[string]string)
 

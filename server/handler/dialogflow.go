@@ -28,10 +28,7 @@ func Dialogflow(r chi.Router) {
 
 // TODO
 func dialogflowTest(w http.ResponseWriter, r *http.Request) {
-	dp, err := utils.NewDialogflowSession(
-		"japancovid19",
-		"ja",
-		"Japan/Tokyo")
+	dp, err := utils.NewDialogflowSession()
 	if err != nil {
 		panic(err)
 	}
@@ -59,10 +56,7 @@ func dialogflowTest(w http.ResponseWriter, r *http.Request) {
 }
 
 func createDialogflowIntents(w http.ResponseWriter, r *http.Request) {
-	dp, err := utils.NewDialogflowSession(
-		"japancovid19",
-		"ja",
-		"Japan/Tokyo")
+	dp, err := utils.NewDialogflowSession()
 	if err != nil {
 		panic(err)
 	}

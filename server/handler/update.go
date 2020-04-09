@@ -23,10 +23,7 @@ func UpdateData(r chi.Router) {
 func updateData(w http.ResponseWriter, r *http.Request) {
 	ctx := utils.NewContext(r)
 	jpd := scrape.Scrape()
-	dp, err := utils.NewDialogflowSession(
-		"japancovid19",
-		"ja",
-		"Japan/Tokyo")
+	dp, err := utils.NewDialogflowSession()
 	if err != nil {
 		panic(err)
 	}
