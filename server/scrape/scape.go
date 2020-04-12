@@ -3,17 +3,16 @@ package scrape
 import (
 	"cloud.google.com/go/datastore"
 	"context"
-	"fmt"
-	"github.com/gocolly/colly"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/niko-cb/covid19datascraper/server/model"
 	"github.com/niko-cb/covid19datascraper/server/utils"
 	"log"
-	"time"
+	"net/http"
 )
 
 const (
 	// Article URL for current day
-	covidDataURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRri4r42DHwMHePjJfYN-qEWhGvKeOQullBtEzfle15i-xAsm9ZgV8oMxQNhPRO1CId39BPnn1IO5YO/pubhtml#"
+	covidDataURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRri4r42DHwMHePjJfYN-qEWhGvKeOQullBtEzfle15i-xAsm9ZgV8oMxQNhPRO1CId39BPnn1IO5YO/pubhtml"
 	// Element for the table that contains the japanese covid data table
 	dataTableElementSelector = "#1399411442 > div > table > tbody"
 	// element for each specific row in the japanese covid data table
@@ -23,52 +22,55 @@ const (
 )
 
 func Scrape() []*model.PrefectureData {
-	c := colly.NewCollector()
 	var covidData []string
 
-	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL)
-	})
-
-	c.SetRequestTimeout(5 * time.Minute)
-
-	// gets table data
-	c.OnHTML(dataTableElementSelector, func(e *colly.HTMLElement) {
-		e.ForEach(dataElementSelector, func(_ int, e *colly.HTMLElement) {
-			var pref string
-			var cases string
-			var rec string
-			var deaths string
-			pref = e.ChildText("td:nth-child(3)")
-			cases = e.ChildText("td:nth-child(4)")
-			if cases == "" {
-				cases = "0"
-			}
-			rec = e.ChildText("td:nth-child(5)")
-			if rec == "" {
-				rec = "0"
-			}
-			deaths = e.ChildText("td:nth-child(6)")
-			if deaths == "" {
-				deaths = "0"
-			}
-			covidData = append(covidData, pref)
-			covidData = append(covidData, cases)
-			covidData = append(covidData, rec)
-			covidData = append(covidData, deaths)
-		})
-	})
-
-	var date string
-	c.OnHTML(dataSourceDateSelector, func(e *colly.HTMLElement) {
-		date = e.ChildText("td:nth-child(6)")
-	})
-
-	err := c.Visit(covidDataURL)
+	resp, err := http.Get(covidDataURL)
 	if err != nil {
-		log.Println(err.Error())
+		panic(err)
+	}
+	defer resp.Body.Close()
+	q, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		panic(err)
 	}
 
+	q.Find(dataTableElementSelector).Each(func(index int, tableHtml *goquery.Selection) {
+		tableHtml.Find(dataElementSelector).Each(func(index int, rowHtml *goquery.Selection) {
+			rowHtml.Find("td:nth-child(3)").Each(func(index int, prefHtml *goquery.Selection) {
+				var pref string
+				pref = prefHtml.Text()
+				covidData = append(covidData, pref)
+			})
+			rowHtml.Find("td:nth-child(4)").Each(func(index int, caseHtml *goquery.Selection) {
+				var cases string
+				cases = caseHtml.Text()
+				if cases == "" {
+					cases = "0"
+				}
+				covidData = append(covidData, cases)
+			})
+			rowHtml.Find("td:nth-child(5)").Each(func(index int, RecHtml *goquery.Selection) {
+				var rec string
+				rec = RecHtml.Text()
+				if rec == "" {
+					rec = "0"
+				}
+				covidData = append(covidData, rec)
+			})
+			rowHtml.Find("td:nth-child(6)").Each(func(index int, deathsHtml *goquery.Selection) {
+				var deaths string
+				deaths = deathsHtml.Text()
+				if deaths == "" {
+					deaths = "0"
+				}
+				covidData = append(covidData, deaths)
+			})
+		})
+	})
+	var date string
+	q.Find(dataSourceDateSelector).Each(func(index int, dateHtml *goquery.Selection) {
+		date = dateHtml.Find("td:nth-child(6)").Text()
+	})
 	return formatData(covidData, date)
 }
 
@@ -87,7 +89,7 @@ func insertOrReinsertToDatastore(data []*model.PrefectureData, date string) {
 	ctx := context.Background()
 	dsClient, err := utils.NewDSClient()
 	if err != nil {
-		return
+		log.Fatalf(err.Error())
 	}
 
 	kind := utils.DatastoreKind()
