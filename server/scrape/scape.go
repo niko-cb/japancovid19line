@@ -8,7 +8,6 @@ import (
 	"github.com/niko-cb/covid19datascraper/server/utils"
 	"log"
 	"net/http"
-	"time"
 )
 
 const (
@@ -69,9 +68,20 @@ func Scrape() []*model.PrefectureData {
 		date = dateHtml.Find("td:nth-child(6)").Text()
 	})
 	if date == "" {
-		date = time.Now().Format("2006-01-02")
+		dsClient, err := utils.NewDSClient()
+		if err != nil {
+			log.Fatalf("error: %v", err)
+		}
+		sd, err := model.GetSourceDate(context.Background(), dsClient, utils.DatastoreDateKind())
+		if err != nil {
+			log.Fatalf("error: %v", err)
+		}
+		date = sd.Date
 	}
-	return formatData(covidData, date)
+
+	log.Println(covidData)
+	//return formatData(covidData, date)
+	return nil
 }
 
 func formatData(data []string, date string) []*model.PrefectureData {
