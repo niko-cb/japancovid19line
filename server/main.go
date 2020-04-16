@@ -45,7 +45,6 @@ func main() {
 		r.Route(handler.ScrapeDataAPIBasePath, handler.ScrapeData)
 		r.Route(handler.LookupAPIBasePath, handler.LookupPrefecture)
 		r.Route(handler.DialogflowAPIBasePath, handler.Dialogflow)
-		r.Route(handler.UpdateDataAPIBasePath, handler.UpdateData)
 	})
 
 	// Choose port

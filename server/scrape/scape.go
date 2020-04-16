@@ -8,6 +8,7 @@ import (
 	"github.com/niko-cb/covid19datascraper/server/utils"
 	"log"
 	"net/http"
+	"time"
 )
 
 const (
@@ -34,32 +35,28 @@ func Scrape() []*model.PrefectureData {
 		panic(err)
 	}
 
-	q.Find(dataTableElementSelector).Each(func(index int, tableHtml *goquery.Selection) {
-		tableHtml.Find(dataElementSelector).Each(func(index int, rowHtml *goquery.Selection) {
-			rowHtml.Find("td:nth-child(3)").Each(func(index int, prefHtml *goquery.Selection) {
-				var pref string
-				pref = prefHtml.Text()
+	q.Find(dataTableElementSelector).Each(func(_ int, tableHtml *goquery.Selection) {
+		tableHtml.Find(dataElementSelector).Each(func(_ int, rowHtml *goquery.Selection) {
+			rowHtml.Find("td:nth-child(3)").Each(func(_ int, prefHtml *goquery.Selection) {
+				pref := prefHtml.Text()
 				covidData = append(covidData, pref)
 			})
-			rowHtml.Find("td:nth-child(4)").Each(func(index int, caseHtml *goquery.Selection) {
-				var cases string
-				cases = caseHtml.Text()
+			rowHtml.Find("td:nth-child(4)").Each(func(_ int, caseHtml *goquery.Selection) {
+				cases := caseHtml.Text()
 				if cases == "" {
 					cases = "0"
 				}
 				covidData = append(covidData, cases)
 			})
-			rowHtml.Find("td:nth-child(5)").Each(func(index int, RecHtml *goquery.Selection) {
-				var rec string
-				rec = RecHtml.Text()
+			rowHtml.Find("td:nth-child(5)").Each(func(_ int, RecHtml *goquery.Selection) {
+				rec := RecHtml.Text()
 				if rec == "" {
 					rec = "0"
 				}
 				covidData = append(covidData, rec)
 			})
-			rowHtml.Find("td:nth-child(6)").Each(func(index int, deathsHtml *goquery.Selection) {
-				var deaths string
-				deaths = deathsHtml.Text()
+			rowHtml.Find("td:nth-child(6)").Each(func(_ int, deathsHtml *goquery.Selection) {
+				deaths := deathsHtml.Text()
 				if deaths == "" {
 					deaths = "0"
 				}
@@ -68,9 +65,12 @@ func Scrape() []*model.PrefectureData {
 		})
 	})
 	var date string
-	q.Find(dataSourceDateSelector).Each(func(index int, dateHtml *goquery.Selection) {
+	q.Find(dataSourceDateSelector).Each(func(_ int, dateHtml *goquery.Selection) {
 		date = dateHtml.Find("td:nth-child(6)").Text()
 	})
+	if date == "" {
+		date = time.Now().Format("2006-01-02")
+	}
 	return formatData(covidData, date)
 }
 
