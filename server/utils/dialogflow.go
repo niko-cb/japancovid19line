@@ -161,7 +161,7 @@ func addPrefectureDataIntents(ctx context.Context, intentsClient *dialogflow.Int
 		var trainingPhraseParts []string
 		trainingPhraseParts = append(trainingPhraseParts, displayName)
 		var messageTexts []string
-		messageTexts = append(messageTexts, sd.Date+"までの情報です\n\n"+"都道府県名:   "+displayName+"\n検査陽性者:   "+strconv.Itoa(p.Cases)+"\n回復者:   "+strconv.Itoa(p.Recovered)+"\n死者:   "+strconv.Itoa(p.Deaths))
+		messageTexts = append(messageTexts, sd.Date+"までの情報です\n\n"+"都道府県名:   "+displayName+"\n検査陽性者:   "+p.Cases+"\n回復者:   "+p.Recovered+"\n死者:   "+p.Deaths)
 
 		request := createDialogflowIntent(displayName, parent, trainingPhraseParts, messageTexts)
 

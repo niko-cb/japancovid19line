@@ -10,6 +10,7 @@ import (
 	"github.com/niko-cb/covid19datascraper/server/utils"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 const (
@@ -45,9 +46,9 @@ func Scrape() []*model.PrefectureData {
 	for _, city := range data.Prefectures {
 		prefectureData := new(model.PrefectureData)
 		prefectureData.Prefecture = city.Name
-		prefectureData.Cases = city.Confirmed
-		prefectureData.Deaths = city.Deaths
-		prefectureData.Recovered = city.Recovered
+		prefectureData.Cases = strconv.Itoa(city.Confirmed)
+		prefectureData.Deaths = strconv.Itoa(city.Deaths)
+		prefectureData.Recovered = strconv.Itoa(city.Recovered)
 
 		pData = append(pData, prefectureData)
 	}
