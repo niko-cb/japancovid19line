@@ -1,8 +1,10 @@
 package scrape
 
 import (
+	"bytes"
 	"cloud.google.com/go/datastore"
 	"context"
+	"encoding/json"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/niko-cb/covid19datascraper/server/model"
 	"github.com/niko-cb/covid19datascraper/server/utils"
@@ -11,20 +13,14 @@ import (
 )
 
 const (
-	// Article URL for current day
-	covidDataURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRri4r42DHwMHePjJfYN-qEWhGvKeOQullBtEzfle15i-xAsm9ZgV8oMxQNhPRO1CId39BPnn1IO5YO/pubhtml"
-	// Element for the table that contains the japanese covid data table
-	dataTableElementSelector = "#1399411442 > div > table > tbody"
-	// element for each specific row in the japanese covid data table
-	dataElementSelector = "tr"
-	// element for the current data's date of publication
-	dataSourceDateSelector = "#434907293 > div > table > tbody > tr:nth-child(20)"
+	// Check Latest JSON File
+	covidDataJSONLatestURL = "https://raw.githubusercontent.com/reustle/covid19japan-data/master/docs/summary/latest.json"
+	// URL for latest JSON File
+	covidDataJSON = "https://raw.githubusercontent.com/reustle/covid19japan-data/master/docs/summary/"
 )
 
 func Scrape() []*model.PrefectureData {
-	var covidData []string
-
-	resp, err := http.Get(covidDataURL)
+	resp, err := http.Get(covidDataJSONLatestURL)
 	if err != nil {
 		panic(err)
 	}
@@ -33,66 +29,47 @@ func Scrape() []*model.PrefectureData {
 	if err != nil {
 		panic(err)
 	}
+	latestJsonFile := q.Text()
+	fileUrl := covidDataJSON + latestJsonFile
 
-	q.Find(dataTableElementSelector).Each(func(_ int, tableHtml *goquery.Selection) {
-		tableHtml.Find(dataElementSelector).Each(func(_ int, rowHtml *goquery.Selection) {
-			rowHtml.Find("td:nth-child(3)").Each(func(_ int, prefHtml *goquery.Selection) {
-				pref := prefHtml.Text()
-				covidData = append(covidData, pref)
-			})
-			rowHtml.Find("td:nth-child(4)").Each(func(_ int, caseHtml *goquery.Selection) {
-				cases := caseHtml.Text()
-				if cases == "" {
-					cases = "0"
-				}
-				covidData = append(covidData, cases)
-			})
-			rowHtml.Find("td:nth-child(5)").Each(func(_ int, RecHtml *goquery.Selection) {
-				rec := RecHtml.Text()
-				if rec == "" {
-					rec = "0"
-				}
-				covidData = append(covidData, rec)
-			})
-			rowHtml.Find("td:nth-child(6)").Each(func(_ int, deathsHtml *goquery.Selection) {
-				deaths := deathsHtml.Text()
-				if deaths == "" {
-					deaths = "0"
-				}
-				covidData = append(covidData, deaths)
-			})
-		})
-	})
-	var date string
-	q.Find(dataSourceDateSelector).Each(func(_ int, dateHtml *goquery.Selection) {
-		date = dateHtml.Find("td:nth-child(6)").Text()
-	})
-	if date == "" {
-		dsClient, err := utils.NewDSClient()
-		if err != nil {
-			log.Fatalf("error: %v", err)
-		}
-		sd, err := model.GetSourceDate(context.Background(), dsClient, utils.DatastoreDateKind())
-		if err != nil {
-			log.Fatalf("error: %v", err)
-		}
-		date = sd.Date
+	data, err := readJSONFromUrl(fileUrl)
+	if err != nil {
+		log.Println(err.Error())
 	}
 
-	log.Println(covidData)
-	//return formatData(covidData, date)
-	return nil
+	date := latestJsonFile[:10]
+	log.Println(date)
+
+	var pData []*model.PrefectureData
+
+	for _, city := range data.Prefectures {
+		prefectureData := new(model.PrefectureData)
+		prefectureData.Prefecture = city.Name
+		prefectureData.Cases = string(city.Confirmed)
+		prefectureData.Deaths = string(city.Deaths)
+		prefectureData.Recovered = string(city.Recovered)
+	}
+
+	insertOrReinsertToDatastore(pData, date)
+	return pData
+
 }
 
-func formatData(data []string, date string) []*model.PrefectureData {
-	var dataSlice []*model.PrefectureData
-	// Skip the headers for the table (start i at 12)
-	for i := 12; i < len(data); i += 4 {
-		covidData := model.NewPrefectureData(data[i], data[i+1], data[i+2], data[i+3])
-		dataSlice = append(dataSlice, covidData)
+func readJSONFromUrl(url string) (*model.AllData, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
 	}
-	insertOrReinsertToDatastore(dataSlice, date)
-	return dataSlice
+	defer resp.Body.Close()
+	var pData *model.AllData
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(resp.Body)
+	respByte := buf.Bytes()
+	if err := json.Unmarshal(respByte, &pData); err != nil {
+		return nil, err
+	}
+
+	return pData, nil
 }
 
 func insertOrReinsertToDatastore(data []*model.PrefectureData, date string) {
