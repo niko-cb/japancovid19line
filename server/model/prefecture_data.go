@@ -7,14 +7,14 @@ import (
 
 type PrefectureData struct {
 	Prefecture string `json:"prefecture"`
-	Cases      string `json:"cases"`
-	Recovered  string `json:"recovered"`
-	Deaths     string `json:"deaths"`
+	Cases      int    `json:"cases"`
+	Recovered  int    `json:"recovered"`
+	Deaths     int    `json:"deaths"`
 }
 
 type PrefectureDataSlice = []*PrefectureData
 
-func NewPrefectureData(pref, cases, rec, deaths string) *PrefectureData {
+func NewPrefectureData(pref string, cases, rec, deaths int) *PrefectureData {
 	return &PrefectureData{
 		Prefecture: pref,
 		Cases:      cases,

@@ -38,20 +38,21 @@ func Scrape() []*model.PrefectureData {
 	}
 
 	date := latestJsonFile[:10]
-	log.Println(date)
+	log.Println(data)
 
 	var pData []*model.PrefectureData
 
 	for _, city := range data.Prefectures {
 		prefectureData := new(model.PrefectureData)
 		prefectureData.Prefecture = city.Name
-		prefectureData.Cases = string(city.Confirmed)
-		prefectureData.Deaths = string(city.Deaths)
-		prefectureData.Recovered = string(city.Recovered)
+		prefectureData.Cases = city.Confirmed
+		prefectureData.Deaths = city.Deaths
+		prefectureData.Recovered = city.Recovered
+
+		pData = append(pData, prefectureData)
 	}
 
-	insertOrReinsertToDatastore(pData, date)
-	return pData
+	return insertOrReinsertToDatastore(pData, date)
 
 }
 
@@ -72,7 +73,7 @@ func readJSONFromUrl(url string) (*model.AllData, error) {
 	return pData, nil
 }
 
-func insertOrReinsertToDatastore(data []*model.PrefectureData, date string) {
+func insertOrReinsertToDatastore(data []*model.PrefectureData, date string) []*model.PrefectureData {
 	ctx := context.Background()
 	dsClient, err := utils.NewDSClient()
 	if err != nil {
@@ -103,4 +104,6 @@ func insertOrReinsertToDatastore(data []*model.PrefectureData, date string) {
 	if _, err := dsClient.Put(ctx, dateKey, sourceDate); err != nil {
 		log.Fatalf("failed to save date into datastore: %v", err)
 	}
+
+	return data
 }
