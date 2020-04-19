@@ -45,7 +45,7 @@ func Scrape() []*model.PrefectureData {
 
 	for _, city := range data.Prefectures {
 		prefectureData := new(model.PrefectureData)
-		prefectureData.Prefecture = city.Name
+		prefectureData.Prefecture = city.NameJA
 		prefectureData.Cases = strconv.Itoa(city.Confirmed)
 		prefectureData.Deaths = strconv.Itoa(city.Deaths)
 		prefectureData.Recovered = strconv.Itoa(city.Recovered)
