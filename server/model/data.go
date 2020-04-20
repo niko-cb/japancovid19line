@@ -1,10 +1,10 @@
 package model
 
-type AllData struct {
-	Prefectures []Data `json:"prefectures"`
+type CovidDataRes struct {
+	Prefectures []PrefectureInfo `json:"prefectures"`
 }
 
-type Data struct {
+type PrefectureInfo struct {
 	Confirmed           int            `json:"confirmed"`
 	CruisePassenger     int            `json:"cruise_passenger"`
 	Deaths              int            `json:"deaths"`

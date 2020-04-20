@@ -1,15 +1,16 @@
 package model
 
 import (
-	"cloud.google.com/go/datastore"
 	"context"
+
+	"cloud.google.com/go/datastore"
 )
 
 type SourceDate struct {
 	Date string
 }
 
-func GetSourceDate(ctx context.Context, dsClient *datastore.Client, kind string) (*SourceDate, error) {
+func GetDateFromDatastore(ctx context.Context, dsClient *datastore.Client, kind string) (*SourceDate, error) {
 	sd := new(SourceDate)
 	key := datastore.NameKey(kind, "Latest", nil)
 

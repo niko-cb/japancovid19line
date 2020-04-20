@@ -7,8 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"path"
-	"runtime"
 )
 
 type severity string
@@ -98,23 +96,4 @@ func logPrintf(ctx context.Context, s severity, msg string) {
 
 var getWriter = func() io.Writer {
 	return os.Stdout
-}
-
-type callerInfo struct {
-	File   string
-	Line   int
-	FnName string
-}
-
-var getCallerInfo = func(skipFrame int) (callerInfo, bool) {
-	pc, file, line, ok := runtime.Caller(skipFrame + 1)
-	if !ok {
-		return callerInfo{}, ok
-	}
-	f := runtime.FuncForPC(pc)
-	return callerInfo{
-		File:   path.Base(file),
-		Line:   line,
-		FnName: f.Name(),
-	}, true
 }

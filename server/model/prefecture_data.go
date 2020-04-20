@@ -1,8 +1,10 @@
 package model
 
 import (
-	"cloud.google.com/go/datastore"
 	"context"
+	"strconv"
+
+	"cloud.google.com/go/datastore"
 )
 
 type PrefectureData struct {
@@ -14,12 +16,12 @@ type PrefectureData struct {
 
 type PrefectureDataSlice = []*PrefectureData
 
-func NewPrefectureData(pref, cases, rec, deaths string) *PrefectureData {
+func NewPrefectureData(pref string, cases, rec, deaths int) *PrefectureData {
 	return &PrefectureData{
 		Prefecture: pref,
-		Cases:      cases,
-		Recovered:  rec,
-		Deaths:     deaths,
+		Cases:      strconv.Itoa(cases),
+		Recovered:  strconv.Itoa(rec),
+		Deaths:     strconv.Itoa(deaths),
 	}
 }
 

@@ -2,15 +2,15 @@ package scrape
 
 import (
 	"bytes"
-	"cloud.google.com/go/datastore"
 	"context"
 	"encoding/json"
+	"log"
+	"net/http"
+
+	"cloud.google.com/go/datastore"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/niko-cb/covid19datascraper/server/model"
 	"github.com/niko-cb/covid19datascraper/server/utils"
-	"log"
-	"net/http"
-	"strconv"
 )
 
 const (
@@ -21,6 +21,39 @@ const (
 )
 
 func Scrape() []*model.PrefectureData {
+	latest := getLatestJson()
+	data, err := readJSONFromUrl(covidDataJSON + latest)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	date := latest[:10]
+	var pData []*model.PrefectureData
+	for _, city := range data.Prefectures {
+		prefectureData := model.NewPrefectureData(city.NameJA, city.Confirmed, city.Deaths, city.Recovered)
+		pData = append(pData, prefectureData)
+	}
+	updateDatastore(pData, date)
+	return pData
+}
+
+func readJSONFromUrl(url string) (*model.CovidDataRes, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var pData *model.CovidDataRes
+	buf := new(bytes.Buffer)
+	_, _ = buf.ReadFrom(resp.Body)
+	respByte := buf.Bytes()
+	if err := json.Unmarshal(respByte, &pData); err != nil {
+		return nil, err
+	}
+
+	return pData, nil
+}
+
+func getLatestJson() string {
 	resp, err := http.Get(covidDataJSONLatestURL)
 	if err != nil {
 		panic(err)
@@ -30,60 +63,16 @@ func Scrape() []*model.PrefectureData {
 	if err != nil {
 		panic(err)
 	}
-	latestJsonFile := q.Text()
-	fileUrl := covidDataJSON + latestJsonFile
-
-	data, err := readJSONFromUrl(fileUrl)
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	date := latestJsonFile[:10]
-	log.Println(data)
-
-	var pData []*model.PrefectureData
-
-	for _, city := range data.Prefectures {
-		prefectureData := new(model.PrefectureData)
-		prefectureData.Prefecture = city.NameJA
-		prefectureData.Cases = strconv.Itoa(city.Confirmed)
-		prefectureData.Deaths = strconv.Itoa(city.Deaths)
-		prefectureData.Recovered = strconv.Itoa(city.Recovered)
-
-		pData = append(pData, prefectureData)
-	}
-
-	return insertOrReinsertToDatastore(pData, date)
-
+	return q.Text()
 }
 
-func readJSONFromUrl(url string) (*model.AllData, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	var pData *model.AllData
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(resp.Body)
-	respByte := buf.Bytes()
-	if err := json.Unmarshal(respByte, &pData); err != nil {
-		return nil, err
-	}
-
-	return pData, nil
-}
-
-func insertOrReinsertToDatastore(data []*model.PrefectureData, date string) []*model.PrefectureData {
+func updateDatastore(data []*model.PrefectureData, date string) {
 	ctx := context.Background()
 	dsClient, err := utils.NewDSClient()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-
 	kind := utils.DatastoreKind()
-
-	log.Println(date)
 
 	var keys []*datastore.Key
 	for _, jpd := range data {
@@ -105,6 +94,4 @@ func insertOrReinsertToDatastore(data []*model.PrefectureData, date string) []*m
 	if _, err := dsClient.Put(ctx, dateKey, sourceDate); err != nil {
 		log.Fatalf("failed to save date into datastore: %v", err)
 	}
-
-	return data
 }

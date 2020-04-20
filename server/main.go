@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/niko-cb/covid19datascraper/server/handler"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/niko-cb/covid19datascraper/server/handler"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -42,8 +43,7 @@ func main() {
 
 	//Routes
 	r.Route(handler.APIPathPrefix, func(r chi.Router) {
-		r.Route(handler.ScrapeDataAPIBasePath, handler.ScrapeData)
-		r.Route(handler.LookupAPIBasePath, handler.LookupPrefecture)
+		r.Route(handler.ScrapeDataAPIBasePath, handler.Scrape)
 		r.Route(handler.DialogflowAPIBasePath, handler.Dialogflow)
 	})
 

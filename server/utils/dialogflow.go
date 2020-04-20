@@ -1,19 +1,20 @@
 package utils
 
 import (
-	dialogflow "cloud.google.com/go/dialogflow/apiv2"
 	"context"
 	"fmt"
-	structpb "github.com/golang/protobuf/ptypes/struct"
-	"github.com/niko-cb/covid19datascraper/server/model"
-	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
-	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	dialogflow "cloud.google.com/go/dialogflow/apiv2"
+	structpb "github.com/golang/protobuf/ptypes/struct"
+	"github.com/niko-cb/covid19datascraper/server/model"
+	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
+	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 )
 
 type DialogflowProcessor struct {
@@ -151,7 +152,7 @@ func addPrefectureDataIntents(ctx context.Context, intentsClient *dialogflow.Int
 	if err != nil {
 		return err
 	}
-	sd, err := model.GetSourceDate(ctx, dsClient, DatastoreDateKind())
+	sd, err := model.GetDateFromDatastore(ctx, dsClient, DatastoreDateKind())
 	if err != nil {
 		return err
 	}
@@ -250,10 +251,10 @@ func createDialogflowIntent(displayName, parent string, trainingPhraseParts, mes
 	return dialogflowpb.CreateIntentRequest{Parent: parent, Intent: &target}
 }
 
-func NewDialogflowSession() (DialogflowProcessor, error) {
+func NewDialogflowSession() DialogflowProcessor {
 	err := dp.init()
 	if err != nil {
-		log.Fatalf("Failed to initiate dialogflow")
+		panic(err)
 	}
-	return dp, nil
+	return dp
 }
