@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
 	dialogflow "cloud.google.com/go/dialogflow/apiv2"
-	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/niko-cb/covid19datascraper/server/model"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -48,74 +46,6 @@ func (dp *DialogflowProcessor) init() (err error) {
 
 	dp.sessionClient = sessionClient
 	return
-}
-
-func (dp *DialogflowProcessor) ProcessNLP(rawMessage string, username string) (r NLPResponse) {
-	sessionID := username
-	request := dialogflowpb.DetectIntentRequest{
-		Session: fmt.Sprintf("projects/%s/agent/sessions/%s", dp.projectID, sessionID),
-		QueryInput: &dialogflowpb.QueryInput{
-			Input: &dialogflowpb.QueryInput_Text{
-				Text: &dialogflowpb.TextInput{
-					Text:         rawMessage,
-					LanguageCode: dp.lang,
-				},
-			},
-		},
-		QueryParams: &dialogflowpb.QueryParameters{
-			TimeZone: dp.timeZone,
-		},
-	}
-	response, err := dp.sessionClient.DetectIntent(dp.ctx, &request)
-	if err != nil {
-		log.Fatalf("Error in dialogflow communication: %s", err.Error())
-	}
-	queryResult := response.GetQueryResult()
-	if queryResult.Intent != nil {
-		r.Intent = queryResult.Intent.DisplayName
-		r.Confidence = queryResult.IntentDetectionConfidence
-	}
-	r.Entities = make(map[string]string)
-	params := queryResult.Parameters.GetFields()
-	if len(params) > 0 {
-		for param, p := range params {
-			fmt.Printf("Param %s: %s (%s)", param, p.GetStringValue(), p.String())
-			extractedValue := extractDialogFlowEntities(p)
-			r.Entities[param] = extractedValue
-		}
-	}
-	return
-}
-
-func extractDialogFlowEntities(p *structpb.Value) (extractedEntity string) {
-	kind := p.GetKind()
-	switch kind.(type) {
-	case *structpb.Value_StringValue:
-		return p.GetStringValue()
-	case *structpb.Value_NumberValue:
-		return strconv.FormatFloat(p.GetNumberValue(), 'f', 6, 64)
-	case *structpb.Value_BoolValue:
-		return strconv.FormatBool(p.GetBoolValue())
-	case *structpb.Value_StructValue:
-		s := p.GetStructValue()
-		fields := s.GetFields()
-		extractedEntity = ""
-		for k, v := range fields {
-			if k == "amount" {
-				extractedEntity = fmt.Sprintf("%s%s", extractedEntity, strconv.FormatFloat(v.GetNumberValue(), 'f', 6, 64))
-			}
-			if k == "unit" {
-				extractedEntity = fmt.Sprintf("%s%s", extractedEntity, v.GetStringValue())
-			}
-			if k == "date_time" {
-				extractedEntity = fmt.Sprintf("%s%s", extractedEntity, v.GetStringValue())
-			}
-			// TODO: add more entity types
-		}
-		return extractedEntity
-	default:
-		return ""
-	}
 }
 
 func (dp *DialogflowProcessor) CreateOrRecreateIntents() error {

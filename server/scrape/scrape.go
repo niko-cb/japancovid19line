@@ -29,7 +29,11 @@ func Scrape() []*model.PrefectureData {
 	date := latest[:10]
 	var pData []*model.PrefectureData
 	for _, city := range data.Prefectures {
-		prefectureData := model.NewPrefectureData(city.NameJA, city.Confirmed, city.Deaths, city.Recovered)
+		pref := city.NameJA
+		if city.NameJA == "" {
+			pref = city.Name
+		}
+		prefectureData := model.NewPrefectureData(pref, city.Confirmed, city.Deaths, city.Recovered)
 		pData = append(pData, prefectureData)
 	}
 	updateDatastore(pData, date)
