@@ -92,7 +92,12 @@ func addPrefectureDataIntents(ctx context.Context, intentsClient *dialogflow.Int
 		var trainingPhraseParts []string
 		trainingPhraseParts = append(trainingPhraseParts, displayName)
 		var messageTexts []string
-		messageTexts = append(messageTexts, sd.Date+"までの情報です\n\n"+"都道府県名:   "+displayName+"\n検査陽性者:   "+p.Cases+"\n回復者:   "+p.Recovered+"\n死者:   "+p.Deaths)
+		cities := "\n\n" + "[市町村の公開データ]\n"
+		cityData := cityMap(p.ConfirmedByCity)
+		if cityData != "" {
+			cities = cities + cityData
+		}
+		messageTexts = append(messageTexts, sd.Date+"までの情報です\n\n"+"都道府県名:   "+displayName+"\n検査陽性者:   "+p.Cases+"\n回復者:   "+p.Recovered+"\n死者:   "+p.Deaths+cities)
 
 		request := createDialogflowIntent(displayName, parent, trainingPhraseParts, messageTexts)
 
@@ -179,6 +184,22 @@ func createDialogflowIntent(displayName, parent string, trainingPhraseParts, mes
 	target := dialogflowpb.Intent{DisplayName: displayName, WebhookState: dialogflowpb.Intent_WEBHOOK_STATE_UNSPECIFIED, TrainingPhrases: targetTrainingPhrases, Messages: []*dialogflowpb.Intent_Message{&intentMessage}}
 
 	return dialogflowpb.CreateIntentRequest{Parent: parent, Intent: &target}
+}
+
+func cityMap(cityData string) string {
+	var cities []string
+	cityList := strings.Split(cityData, ",\"")
+	for _, city := range cityList {
+		c := strings.ReplaceAll(city, "{", "")
+		c = strings.ReplaceAll(c, "}", "")
+		c = strings.ReplaceAll(c, "\"", "")
+		c = strings.TrimSpace(c)
+		c = strings.ReplaceAll(c, ":", ": ")
+		if c != "" {
+			cities = append(cities, c)
+		}
+	}
+	return strings.Join(cities, "\n")
 }
 
 func NewDialogflowSession() DialogflowProcessor {

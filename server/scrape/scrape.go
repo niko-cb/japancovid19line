@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/niko-cb/covid19datascraper/server/prefectures"
+
 	"cloud.google.com/go/datastore"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/niko-cb/covid19datascraper/server/model"
@@ -28,12 +30,16 @@ func Scrape() []*model.PrefectureData {
 	}
 	date := latest[:10]
 	var pData []*model.PrefectureData
-	for _, city := range data.Prefectures {
-		pref := city.NameJA
-		if city.NameJA == "" {
-			pref = city.Name
+	for _, prefecture := range data.Prefectures {
+		pref := prefecture.NameJA
+		if prefecture.NameJA == "" {
+			pref = (&prefectures.PrefectureMap{}).Japanese(prefecture.Name)
 		}
-		prefectureData := model.NewPrefectureData(pref, city.Confirmed, city.Deaths, city.Recovered)
+		cities, err := json.Marshal(prefecture.ConfirmedByCity)
+		if err != nil {
+			log.Println(err.Error())
+		}
+		prefectureData := model.NewPrefectureData(pref, prefecture.Confirmed, prefecture.Deaths, prefecture.Recovered, string(cities))
 		pData = append(pData, prefectureData)
 	}
 	updateDatastore(pData, date)
