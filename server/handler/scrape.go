@@ -7,9 +7,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	"github.com/niko-cb/covid19datascraper/server/model"
-	"github.com/niko-cb/covid19datascraper/server/utils"
-
 	"github.com/niko-cb/covid19datascraper/server/scrape"
+	"github.com/niko-cb/covid19datascraper/server/utils"
 )
 
 const (
