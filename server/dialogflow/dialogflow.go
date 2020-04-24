@@ -195,7 +195,7 @@ func cityMap(cityData string) string {
 		c = strings.ReplaceAll(c, ":", ": ")
 		if c != "" {
 			// because Chigesaki doesn't exist
-			if strings.Split(c, ":")[0] != "Chigesaki" {
+			if strings.Split(c, ":")[0] != "Chigesaki" && strings.Split(c, ":")[0] != "Kamamura" {
 				cities = append(cities, c)
 			}
 		}
