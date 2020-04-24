@@ -17,7 +17,7 @@ import (
 	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 )
 
-type DialogflowProcessor struct {
+type Processor struct {
 	projectID     string
 	authJSON      string
 	lang          string
@@ -26,41 +26,35 @@ type DialogflowProcessor struct {
 	ctx           context.Context
 }
 
-type NLPResponse struct {
-	Intent     string            `json:"intent"`
-	Confidence float32           `json:"confidence"`
-	Entities   map[string]string `json:"entities"`
-}
+var p Processor
 
-var dp DialogflowProcessor
+func (p *Processor) init() (err error) {
+	p.projectID = os.Getenv("PROJECT_ID")
+	p.authJSON = os.Getenv("DIALOGFLOW_KEYFILE_JSON")
+	p.lang = "ja"
+	p.timeZone = "Japan/Tokyo"
 
-func (dp *DialogflowProcessor) init() (err error) {
-	dp.projectID = os.Getenv("PROJECT_ID")
-	dp.authJSON = os.Getenv("DIALOGFLOW_KEYFILE_JSON")
-	dp.lang = "ja"
-	dp.timeZone = "Japan/Tokyo"
-
-	dp.ctx = context.Background()
-	sessionClient, err := dialogflow.NewSessionsClient(dp.ctx, option.WithCredentialsJSON([]byte(dp.authJSON)))
+	p.ctx = context.Background()
+	sessionClient, err := dialogflow.NewSessionsClient(p.ctx, option.WithCredentialsJSON([]byte(p.authJSON)))
 	if err != nil {
 		log.Fatalf("Failed to authenticate with Dialogflow: %v", err)
 	}
 
-	dp.sessionClient = sessionClient
+	p.sessionClient = sessionClient
 	return
 }
 
-func (dp *DialogflowProcessor) CreateOrRecreateIntents() error {
-	ctx := dp.ctx
-	intentsClient, clientErr := dialogflow.NewIntentsClient(ctx, option.WithCredentialsJSON([]byte(dp.authJSON)))
+func (p *Processor) CreateOrRecreateIntents() error {
+	ctx := p.ctx
+	intentsClient, clientErr := dialogflow.NewIntentsClient(ctx, option.WithCredentialsJSON([]byte(p.authJSON)))
 	if clientErr != nil {
 		return clientErr
 	}
 	defer intentsClient.Close()
 
-	parent := fmt.Sprintf("projects/%s/agent", dp.projectID)
+	parent := fmt.Sprintf("projects/%s/agent", p.projectID)
 
-	if err := deleteIntents(ctx, intentsClient, dp.projectID, parent); err != nil {
+	if err := deleteIntents(ctx, intentsClient, p.projectID, parent); err != nil {
 		return err
 	}
 
@@ -204,10 +198,10 @@ func cityMap(cityData string) string {
 	return strings.Join(cities, "\n")
 }
 
-func NewSession() DialogflowProcessor {
-	err := dp.init()
+func NewSession() Processor {
+	err := p.init()
 	if err != nil {
 		panic(err)
 	}
-	return dp
+	return p
 }
