@@ -33,7 +33,7 @@ func Do() []*model.PrefectureData {
 		if err != nil {
 			log.Println(err.Error())
 		}
-		prefectureData := model.NewPrefectureData(pref, prefecture.Confirmed, prefecture.Deaths, prefecture.Recovered, string(cities))
+		prefectureData := model.NewPrefectureData(pref, prefecture.Confirmed, prefecture.Deaths, prefecture.Recovered, prefecture.NewlyConfirmed, prefecture.YesterdayConfirmed, string(cities))
 		pData = append(pData, prefectureData)
 	}
 	updateDatastore(pData, date)

@@ -12,6 +12,7 @@ type PrefectureInfo struct {
 	DailyConfirmedCount []int          `json:"dailyConfirmedCount"`
 	DailyConfirmedDate  string         `json:"dailyConfirmedDate"`
 	NewlyConfirmed      int            `json:"newlyConfirmed"`
+	YesterdayConfirmed  int            `json:"yesterdayConfirmed"`
 	Recovered           int            `json:"recovered"`
 	NameJA              string         `json:"name_ja"`
 	Name                string         `json:"name"`

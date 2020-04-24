@@ -8,23 +8,27 @@ import (
 )
 
 type PrefectureData struct {
-	Prefecture string `json:"prefecture"`
-	Cases      string `json:"cases"`
-	Recovered  string `json:"recovered"`
-	Deaths     string `json:"deaths"`
+	Prefecture         string `json:"prefecture"`
+	Cases              string `json:"cases"`
+	Recovered          string `json:"recovered"`
+	Deaths             string `json:"deaths"`
+	NewlyConfirmed     string `json:"newlyConfirmed"`
+	YesterdayConfirmed string `json:"yesterdayConfirmed"`
 
 	ConfirmedByCity string `json:"confirmedByCity"`
 }
 
 type PrefectureDataSlice = []*PrefectureData
 
-func NewPrefectureData(pref string, cases, rec, deaths int, cityMap string) *PrefectureData {
+func NewPrefectureData(pref string, cases, rec, deaths, newlyConfirmed, yesterdayConfirmed int, cityMap string) *PrefectureData {
 	return &PrefectureData{
-		Prefecture:      pref,
-		Cases:           strconv.Itoa(cases),
-		Recovered:       strconv.Itoa(rec),
-		Deaths:          strconv.Itoa(deaths),
-		ConfirmedByCity: cityMap,
+		Prefecture:         pref,
+		Cases:              strconv.Itoa(cases),
+		Recovered:          strconv.Itoa(rec),
+		Deaths:             strconv.Itoa(deaths),
+		NewlyConfirmed:     strconv.Itoa(newlyConfirmed),
+		YesterdayConfirmed: strconv.Itoa(yesterdayConfirmed),
+		ConfirmedByCity:    cityMap,
 	}
 }
 
