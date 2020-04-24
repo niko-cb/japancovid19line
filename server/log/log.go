@@ -1,4 +1,4 @@
-package utils
+package log
 
 import (
 	"context"
@@ -44,7 +44,7 @@ func infof(ctx context.Context, msg string) {
 	logPrintf(ctx, severityInfo, msg)
 }
 
-func LogErrorf(ctx context.Context, format string, v ...interface{}) {
+func Errorf(ctx context.Context, format string, v ...interface{}) {
 	errorf(ctx, fmt.Sprintf(format, v...))
 }
 

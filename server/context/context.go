@@ -1,4 +1,4 @@
-package utils
+package context
 
 import (
 	"context"
@@ -6,10 +6,10 @@ import (
 )
 
 // create new context for application
-func NewContext(r *http.Request) context.Context {
+func New(r *http.Request) context.Context {
 	return r.Context()
 }
 
-func GetContext() context.Context {
+func Get() context.Context {
 	return context.Background()
 }

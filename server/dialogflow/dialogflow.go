@@ -1,4 +1,4 @@
-package utils
+package dialogflow
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/niko-cb/covid19datascraper/server/datastore"
 
 	dialogflow "cloud.google.com/go/dialogflow/apiv2"
 	"github.com/niko-cb/covid19datascraper/server/model"
@@ -74,15 +76,15 @@ func (dp *DialogflowProcessor) CreateOrRecreateIntents() error {
 }
 
 func addPrefectureDataIntents(ctx context.Context, intentsClient *dialogflow.IntentsClient, parent string) error {
-	dsClient, err := NewDSClient()
+	dsClient, err := datastore.NewClient()
 	if err != nil {
 		return err
 	}
-	pData, err := model.GetPrefectureData(ctx, dsClient, DatastoreKind())
+	pData, err := model.GetPrefectureData(ctx, dsClient, datastore.DataKind())
 	if err != nil {
 		return err
 	}
-	sd, err := model.GetDateFromDatastore(ctx, dsClient, DatastoreDateKind())
+	sd, err := model.GetDateFromDatastore(ctx, dsClient, datastore.DateKind())
 	if err != nil {
 		return err
 	}
@@ -202,7 +204,7 @@ func cityMap(cityData string) string {
 	return strings.Join(cities, "\n")
 }
 
-func NewDialogflowSession() DialogflowProcessor {
+func NewSession() DialogflowProcessor {
 	err := dp.init()
 	if err != nil {
 		panic(err)

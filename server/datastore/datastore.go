@@ -1,14 +1,16 @@
-package utils
+package datastore
 
 import (
 	"os"
+
+	"github.com/niko-cb/covid19datascraper/server/context"
 
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/option"
 )
 
-func NewDSClient() (*datastore.Client, error) {
-	ctx := GetContext()
+func NewClient() (*datastore.Client, error) {
+	ctx := context.Get()
 	dsJSON := os.Getenv("DATASTORE_CRED_JSON")
 	projectID := os.Getenv("PROJECT_ID")
 	if c, err := datastore.NewClient(ctx, projectID, option.WithCredentialsJSON([]byte(dsJSON))); err != nil {
@@ -18,10 +20,10 @@ func NewDSClient() (*datastore.Client, error) {
 	}
 }
 
-func DatastoreKind() string {
+func DataKind() string {
 	return "CovidData"
 }
 
-func DatastoreDateKind() string {
+func DateKind() string {
 	return "SourceDate"
 }

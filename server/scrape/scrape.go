@@ -7,12 +7,13 @@ import (
 	"log"
 	"net/http"
 
+	datastore2 "github.com/niko-cb/covid19datascraper/server/datastore"
+
 	"github.com/niko-cb/covid19datascraper/server/prefectures"
 
 	"cloud.google.com/go/datastore"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/niko-cb/covid19datascraper/server/model"
-	"github.com/niko-cb/covid19datascraper/server/utils"
 )
 
 const (
@@ -22,7 +23,7 @@ const (
 	covidDataJSON = "https://raw.githubusercontent.com/reustle/covid19japan-data/master/docs/summary/"
 )
 
-func Scrape() []*model.PrefectureData {
+func Do() []*model.PrefectureData {
 	latest := getLatestJson()
 	data, err := readJSONFromUrl(covidDataJSON + latest)
 	if err != nil {
@@ -78,11 +79,11 @@ func getLatestJson() string {
 
 func updateDatastore(data []*model.PrefectureData, date string) {
 	ctx := context.Background()
-	dsClient, err := utils.NewDSClient()
+	dsClient, err := datastore2.NewClient()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	kind := utils.DatastoreKind()
+	kind := datastore2.DataKind()
 
 	var keys []*datastore.Key
 	for _, jpd := range data {
@@ -98,7 +99,7 @@ func updateDatastore(data []*model.PrefectureData, date string) {
 	sourceDate := new(model.SourceDate)
 	sourceDate.Date = date
 
-	dateKind := utils.DatastoreDateKind()
+	dateKind := datastore2.DateKind()
 	name := "Latest"
 	dateKey := datastore.NameKey(dateKind, name, nil)
 	if _, err := dsClient.Put(ctx, dateKey, sourceDate); err != nil {
