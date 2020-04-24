@@ -16,13 +16,6 @@ import (
 	"github.com/niko-cb/covid19datascraper/server/model"
 )
 
-const (
-	// Check Latest JSON File
-	covidDataJSONLatestURL = "https://raw.githubusercontent.com/reustle/covid19japan-data/master/docs/summary/latest.json"
-	// URL for latest JSON File
-	covidDataJSON = "https://raw.githubusercontent.com/reustle/covid19japan-data/master/docs/summary/"
-)
-
 func Do() []*model.PrefectureData {
 	latest := getLatestJson()
 	data, err := readJSONFromUrl(covidDataJSON + latest)

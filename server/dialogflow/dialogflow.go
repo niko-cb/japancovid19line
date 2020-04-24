@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 	"time"
+
+	"github.com/niko-cb/covid19datascraper/server/env"
 
 	"github.com/niko-cb/covid19datascraper/server/datastore"
 
@@ -18,24 +19,24 @@ import (
 )
 
 type Processor struct {
-	projectID     string
-	authJSON      string
-	lang          string
-	timeZone      string
-	sessionClient *dialogflow.SessionsClient
-	ctx           context.Context
+	projectID      string
+	authentication string
+	language       string
+	timezone       string
+	sessionClient  *dialogflow.SessionsClient
+	ctx            context.Context
 }
 
 var p Processor
 
 func (p *Processor) init() (err error) {
-	p.projectID = os.Getenv("PROJECT_ID")
-	p.authJSON = os.Getenv("DIALOGFLOW_KEYFILE_JSON")
-	p.lang = "ja"
-	p.timeZone = "Japan/Tokyo"
+	p.projectID = env.ProjectID()
+	p.authentication = env.AuthDialogflow()
+	p.language = env.Language()
+	p.timezone = env.Timezone()
 
 	p.ctx = context.Background()
-	sessionClient, err := dialogflow.NewSessionsClient(p.ctx, option.WithCredentialsJSON([]byte(p.authJSON)))
+	sessionClient, err := dialogflow.NewSessionsClient(p.ctx, option.WithCredentialsJSON([]byte(p.authentication)))
 	if err != nil {
 		log.Fatalf("Failed to authenticate with Dialogflow: %v", err)
 	}
@@ -46,7 +47,7 @@ func (p *Processor) init() (err error) {
 
 func (p *Processor) CreateOrRecreateIntents() error {
 	ctx := p.ctx
-	intentsClient, clientErr := dialogflow.NewIntentsClient(ctx, option.WithCredentialsJSON([]byte(p.authJSON)))
+	intentsClient, clientErr := dialogflow.NewIntentsClient(ctx, option.WithCredentialsJSON([]byte(p.authentication)))
 	if clientErr != nil {
 		return clientErr
 	}
@@ -83,6 +84,7 @@ func addPrefectureDataIntents(ctx context.Context, intentsClient *dialogflow.Int
 		return err
 	}
 	for _, p := range pData {
+		// 1 second sleep in order to prevent hitting the request limit
 		time.Sleep(1 * time.Second)
 		displayName := p.Prefecture
 		var trainingPhraseParts []string

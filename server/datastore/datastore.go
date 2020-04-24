@@ -1,7 +1,7 @@
 package datastore
 
 import (
-	"os"
+	"github.com/niko-cb/covid19datascraper/server/env"
 
 	"github.com/niko-cb/covid19datascraper/server/context"
 
@@ -11,8 +11,8 @@ import (
 
 func NewClient() (*datastore.Client, error) {
 	ctx := context.Get()
-	dsJSON := os.Getenv("DATASTORE_CRED_JSON")
-	projectID := os.Getenv("PROJECT_ID")
+	dsJSON := env.AuthDatastore()
+	projectID := env.ProjectID()
 	if c, err := datastore.NewClient(ctx, projectID, option.WithCredentialsJSON([]byte(dsJSON))); err != nil {
 		return nil, err
 	} else {
