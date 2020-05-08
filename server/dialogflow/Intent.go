@@ -22,8 +22,7 @@ func (i *Intent) Make(parent string, cs *model.Symptoms, p *model.PrefectureData
 		displayName := "症状"
 		trainingPhraseParts = append(trainingPhraseParts, displayName)
 		messageTexts = append(messageTexts, NewSMessage(cs).Content.String())
-	}
-	if p != nil {
+	} else if p != nil {
 		displayName := p.Prefecture
 		trainingPhraseParts = append(trainingPhraseParts, displayName)
 		cities := cityMap(p.ConfirmedByCity)
