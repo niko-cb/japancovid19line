@@ -3,6 +3,8 @@ package handler
 import (
 	"net/http"
 
+	e "github.com/niko-cb/covid19datascraper/server/error"
+
 	"github.com/niko-cb/covid19datascraper/server/context"
 	"github.com/niko-cb/covid19datascraper/server/dialogflow"
 	"github.com/niko-cb/covid19datascraper/server/log"
@@ -21,11 +23,11 @@ func Dialogflow(r chi.Router) {
 }
 
 func createDialogflowIntents(w http.ResponseWriter, r *http.Request) {
+	render.Status(r, http.StatusOK)
 	ctx := context.New(r)
 	dp := dialogflow.NewSession()
 	if err := dp.CreateOrRecreateIntents(); err != nil {
 		log.Errorf(ctx, err.Error())
-		render.Status(r, http.StatusInternalServerError)
+		_ = render.Render(w, r, e.ErrRender(ctx, err))
 	}
-	render.Status(r, http.StatusOK)
 }

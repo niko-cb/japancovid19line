@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	ctx "github.com/niko-cb/covid19datascraper/server/context"
+
 	"github.com/niko-cb/covid19datascraper/server/env"
 
 	"github.com/niko-cb/covid19datascraper/server/datastore"
@@ -29,18 +31,27 @@ type Processor struct {
 
 var p Processor
 
-func (p *Processor) init() (err error) {
-	p.projectID = env.ProjectID()
-	p.authentication = env.AuthDialogflow()
-	p.language = env.Language()
-	p.timezone = env.Timezone()
+func NewSession() Processor {
+	err := p.init()
+	if err != nil {
+		panic(err)
+	}
+	return p
+}
 
-	p.ctx = context.Background()
+func (p *Processor) init() (err error) {
+	config := env.Get()
+
+	p.projectID = config.ProjectID
+	p.authentication = config.DialogflowAuth
+	p.language = config.Language
+	p.timezone = config.Timezone
+	p.ctx = ctx.Get()
+
 	sessionClient, err := dialogflow.NewSessionsClient(p.ctx, option.WithCredentialsJSON([]byte(p.authentication)))
 	if err != nil {
 		log.Fatalf("Failed to authenticate with Dialogflow: %v", err)
 	}
-
 	p.sessionClient = sessionClient
 	return
 }
@@ -52,17 +63,14 @@ func (p *Processor) CreateOrRecreateIntents() error {
 		return clientErr
 	}
 	defer intentsClient.Close()
-
 	parent := fmt.Sprintf("projects/%s/agent", p.projectID)
 
 	if err := deleteIntents(ctx, intentsClient, p.projectID, parent); err != nil {
 		return err
 	}
-
 	if err := addPrefectureDataIntents(ctx, intentsClient, parent); err != nil {
 		return err
 	}
-
 	if err := addCoronavirusSymptomsIntent(ctx, intentsClient, parent); err != nil {
 		return err
 	}
@@ -86,19 +94,8 @@ func addPrefectureDataIntents(ctx context.Context, intentsClient *dialogflow.Int
 	for _, p := range pData {
 		// 1 second sleep in order to prevent hitting the request limit
 		time.Sleep(1 * time.Second)
-		displayName := p.Prefecture
-		var trainingPhraseParts []string
-		trainingPhraseParts = append(trainingPhraseParts, displayName)
-		var messageTexts []string
-		cities := "\n\n" + "[市町村の公開データ]\n"
-		cityData := cityMap(p.ConfirmedByCity)
-		if cityData != "" {
-			cities = cities + cityData
-		}
-		messageTexts = append(messageTexts, sd.Date+"までの情報です\n\n"+"都道府県名:   "+displayName+"\n検査陽性者(今まで):   "+p.Cases+"\n今日の検査陽性者:  "+p.NewlyConfirmed+"\n昨日の検査陽性者:  "+p.YesterdayConfirmed+"\n回復者:   "+p.Recovered+"\n死者:   "+p.Deaths+cities)
-
-		request := createDialogflowIntent(displayName, parent, trainingPhraseParts, messageTexts)
-
+		intent := (&Intent{}).Make(parent, nil, p, sd)
+		request := createIntentRequest(intent)
 		_, requestErr := intentsClient.CreateIntent(ctx, &request)
 		log.Println(&request)
 		if requestErr != nil {
@@ -110,17 +107,8 @@ func addPrefectureDataIntents(ctx context.Context, intentsClient *dialogflow.Int
 
 func addCoronavirusSymptomsIntent(ctx context.Context, intentsClient *dialogflow.IntentsClient, parent string) error {
 	cs := model.GetCoronavirusSymptoms()
-
-	commonString := strings.Join(cs.Common, ", ")
-	rareString := strings.Join(cs.Rare, ", ")
-	severeString := strings.Join(cs.Severe, ", ")
-
-	displayName := "症状"
-	var trainingPhraseParts []string
-	trainingPhraseParts = append(trainingPhraseParts, displayName)
-	var messageTexts []string
-	messageTexts = append(messageTexts, "症状\n\n"+"初期症状: "+commonString+"\n\n"+"人によっての症状: "+rareString+"\n\n"+"重篤な症状: "+severeString)
-	request := createDialogflowIntent(displayName, parent, trainingPhraseParts, messageTexts)
+	intent := (&Intent{}).Make(parent, cs, nil, nil)
+	request := createIntentRequest(intent)
 
 	_, requestErr := intentsClient.CreateIntent(ctx, &request)
 	log.Println(&request)
@@ -131,9 +119,7 @@ func addCoronavirusSymptomsIntent(ctx context.Context, intentsClient *dialogflow
 }
 
 func listIntents(ctx context.Context, intentsClient *dialogflow.IntentsClient, parent string) ([]*dialogflowpb.Intent, error) {
-
 	request := dialogflowpb.ListIntentsRequest{Parent: parent}
-
 	intentIterator := intentsClient.ListIntents(ctx, &request)
 	var intents []*dialogflowpb.Intent
 
@@ -165,48 +151,21 @@ func deleteIntents(ctx context.Context, intentsClient *dialogflow.IntentsClient,
 	return nil
 }
 
-func createDialogflowIntent(displayName, parent string, trainingPhraseParts, messageTexts []string) dialogflowpb.CreateIntentRequest {
+func createIntentRequest(intent *Intent) dialogflowpb.CreateIntentRequest {
 	var targetTrainingPhrases []*dialogflowpb.Intent_TrainingPhrase
 	var targetTrainingPhraseParts []*dialogflowpb.Intent_TrainingPhrase_Part
-	for _, partString := range trainingPhraseParts {
+	for _, partString := range intent.TrainingPhrases {
 		part := dialogflowpb.Intent_TrainingPhrase_Part{Text: partString}
 		targetTrainingPhraseParts = []*dialogflowpb.Intent_TrainingPhrase_Part{&part}
 		targetTrainingPhrase := dialogflowpb.Intent_TrainingPhrase{Type: dialogflowpb.Intent_TrainingPhrase_TYPE_UNSPECIFIED, Parts: targetTrainingPhraseParts}
 		targetTrainingPhrases = append(targetTrainingPhrases, &targetTrainingPhrase)
 	}
 
-	intentMessageTexts := dialogflowpb.Intent_Message_Text{Text: messageTexts}
+	intentMessageTexts := dialogflowpb.Intent_Message_Text{Text: intent.Messages}
 	wrappedIntentMessageTexts := dialogflowpb.Intent_Message_Text_{Text: &intentMessageTexts}
 	intentMessage := dialogflowpb.Intent_Message{Message: &wrappedIntentMessageTexts}
 
-	target := dialogflowpb.Intent{DisplayName: displayName, WebhookState: dialogflowpb.Intent_WEBHOOK_STATE_UNSPECIFIED, TrainingPhrases: targetTrainingPhrases, Messages: []*dialogflowpb.Intent_Message{&intentMessage}}
+	target := dialogflowpb.Intent{DisplayName: intent.DisplayName, WebhookState: dialogflowpb.Intent_WEBHOOK_STATE_UNSPECIFIED, TrainingPhrases: targetTrainingPhrases, Messages: []*dialogflowpb.Intent_Message{&intentMessage}}
 
-	return dialogflowpb.CreateIntentRequest{Parent: parent, Intent: &target}
-}
-
-func cityMap(cityData string) string {
-	var cities []string
-	cityList := strings.Split(cityData, ",\"")
-	for _, city := range cityList {
-		c := strings.ReplaceAll(city, "{", "")
-		c = strings.ReplaceAll(c, "}", "")
-		c = strings.ReplaceAll(c, "\"", "")
-		c = strings.TrimSpace(c)
-		c = strings.ReplaceAll(c, ":", ": ")
-		if c != "" {
-			// because Chigesaki doesn't exist
-			if strings.Split(c, ":")[0] != "Chigesaki" && strings.Split(c, ":")[0] != "Kamamura" {
-				cities = append(cities, c)
-			}
-		}
-	}
-	return strings.Join(cities, "\n")
-}
-
-func NewSession() Processor {
-	err := p.init()
-	if err != nil {
-		panic(err)
-	}
-	return p
+	return dialogflowpb.CreateIntentRequest{Parent: intent.Parent, Intent: &target}
 }

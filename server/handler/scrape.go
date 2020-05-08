@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/niko-cb/covid19datascraper/server/context"
-	error2 "github.com/niko-cb/covid19datascraper/server/error"
+	e "github.com/niko-cb/covid19datascraper/server/error"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
@@ -24,12 +24,12 @@ func Scrape(r chi.Router) {
 
 // scrapeData is a handler to retrieve all prefectures' covid19 data
 func scrapeData(w http.ResponseWriter, r *http.Request) {
-	ctx := context.New(r)
-	jpd := scrape.Do()
-
 	render.Status(r, http.StatusOK)
+
+	ctx := context.New(r)
+	jpd := scrape.Do(ctx)
 	if err := render.Render(w, r, newPrefectureDataRes(jpd)); err != nil {
-		_ = render.Render(w, r, error2.ErrRender(ctx, err))
+		_ = render.Render(w, r, e.ErrRender(ctx, err))
 	}
 }
 

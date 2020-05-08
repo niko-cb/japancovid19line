@@ -2,22 +2,20 @@ package env
 
 import "os"
 
-func ProjectID() string {
-	return os.Getenv("PROJECT_ID")
+type Config struct {
+	ProjectID      string
+	DialogflowAuth string
+	DatastoreAuth  string
+	Language       string
+	Timezone       string
 }
 
-func AuthDialogflow() string {
-	return os.Getenv("DIALOGFLOW_KEYFILE_JSON")
-}
-
-func AuthDatastore() string {
-	return os.Getenv("DATASTORE_CRED_JSON")
-}
-
-func Language() string {
-	return os.Getenv("LANGUAGE")
-}
-
-func Timezone() string {
-	return os.Getenv("TIMEZONE")
+func Get() *Config {
+	return &Config{
+		ProjectID:      os.Getenv("PROJECT_ID"),
+		DialogflowAuth: os.Getenv("DIALOGFLOW_KEYFILE_JSON"),
+		DatastoreAuth:  os.Getenv("DATASTORE_CRED_JSON"),
+		Language:       os.Getenv("LANGUAGE"),
+		Timezone:       os.Getenv("TIMEZONE"),
+	}
 }
