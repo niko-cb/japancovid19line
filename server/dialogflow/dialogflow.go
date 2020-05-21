@@ -41,6 +41,7 @@ func NewSession() Processor {
 	p.language = config.Language
 	p.timezone = config.Timezone
 	p.sessionClient = sessionClient
+	p.ctx = ctx.Get()
 
 	return p
 }
