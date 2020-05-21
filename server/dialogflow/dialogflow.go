@@ -27,9 +27,7 @@ type Processor struct {
 	ctx            context.Context
 }
 
-var p Processor
-
-func NewSession() *Processor {
+func (p *Processor) NewSession() *Processor {
 	config := env.Get()
 	sessionClient, err := dialogflow.NewSessionsClient(p.ctx, option.WithCredentialsJSON([]byte(config.DialogflowAuth)))
 	if err != nil {
