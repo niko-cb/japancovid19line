@@ -25,19 +25,18 @@ func Do(ctx context.Context) []*model.PrefectureData {
 	}
 	date := latest[:10]
 	var pData []*model.PrefectureData
-	for _, prefecture := range data.Prefectures {
-		pref := prefecture.NameJA
-		if prefecture.NameJA == "" {
-			pref = (&prefectures.PrefectureMap{}).Japanese(prefecture.Name)
+	for _, p := range data.Prefectures {
+		if p.NameJA == "" {
+			p.NameJA = (&prefectures.PrefectureMap{}).Japanese(p.Name)
 		}
-		cities, err := json.Marshal(prefecture.ConfirmedByCity)
+		cities, err := json.Marshal(p.ConfirmedByCity)
 		if err != nil {
 			log.Println(err.Error())
 		}
 
-		prefectureData := model.NewPrefectureData(pref, prefecture.Confirmed,
-			prefecture.Deaths, prefecture.Recovered, prefecture.NewlyConfirmed,
-			prefecture.YesterdayConfirmed, string(cities))
+		prefectureData := model.NewPrefectureData(p.NameJA, p.Confirmed,
+			p.Deaths, p.Recovered, p.NewlyConfirmed,
+			p.YesterdayConfirmed, string(cities))
 
 		pData = append(pData, prefectureData)
 	}
@@ -51,32 +50,33 @@ func readJSONFromUrl(url string) (*model.CovidDataRes, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	var pData *model.CovidDataRes
+	var res *model.CovidDataRes
 	buf := new(bytes.Buffer)
 	_, _ = buf.ReadFrom(resp.Body)
 	respByte := buf.Bytes()
-	if err := json.Unmarshal(respByte, &pData); err != nil {
+	if err := json.Unmarshal(respByte, &res); err != nil {
 		return nil, err
 	}
 
-	return pData, nil
+	return res, nil
 }
 
 func getLatestJson() (string, error) {
-	resp, err := http.Get(covidDataJSONLatestURL)
+	res, err := http.Get(covidDataJSONLatestURL)
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
-	q, err := goquery.NewDocumentFromReader(resp.Body)
+	defer res.Body.Close()
+
+	d, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
 		return "", err
 	}
-	return q.Text(), nil
+	return d.Text(), nil
 }
 
 func updateDatastore(ctx context.Context, data []*model.PrefectureData, date string) {
-	dsClient, err := ds.NewClient()
+	c, err := ds.NewClient()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -86,15 +86,15 @@ func updateDatastore(ctx context.Context, data []*model.PrefectureData, date str
 		keys = append(keys, key)
 	}
 
-	if _, err := dsClient.PutMulti(ctx, keys, data); err != nil {
+	if _, err := c.PutMulti(ctx, keys, data); err != nil {
 		log.Fatalf("failed to save data into datastore: %v", err)
 	}
 
 	sourceDate := new(model.SourceDate)
 	sourceDate.Date = date
 
-	dateKey := datastore.NameKey(ds.DataKind(), ds.DateName(), nil)
-	if _, err := dsClient.Put(ctx, dateKey, sourceDate); err != nil {
+	dateKey := datastore.NameKey(ds.DateKind(), ds.DateName(), nil)
+	if _, err := c.Put(ctx, dateKey, sourceDate); err != nil {
 		log.Fatalf("failed to save date into datastore: %v", err)
 	}
 }

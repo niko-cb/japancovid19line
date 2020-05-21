@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	ctx "github.com/niko-cb/covid19datascraper/server/context"
-
 	"github.com/niko-cb/covid19datascraper/server/env"
 
 	"github.com/niko-cb/covid19datascraper/server/datastore"
@@ -31,29 +29,19 @@ type Processor struct {
 
 var p Processor
 
-func NewSession() Processor {
-	err := p.init()
-	if err != nil {
-		panic(err)
-	}
-	return p
-}
-
-func (p *Processor) init() (err error) {
+func NewSession() *Processor {
 	config := env.Get()
-
-	p.projectID = config.ProjectID
-	p.authentication = config.DialogflowAuth
-	p.language = config.Language
-	p.timezone = config.Timezone
-	p.ctx = ctx.Get()
-
-	sessionClient, err := dialogflow.NewSessionsClient(p.ctx, option.WithCredentialsJSON([]byte(p.authentication)))
+	sessionClient, err := dialogflow.NewSessionsClient(p.ctx, option.WithCredentialsJSON([]byte(config.DialogflowAuth)))
 	if err != nil {
 		log.Fatalf("Failed to authenticate with Dialogflow: %v", err)
 	}
-	p.sessionClient = sessionClient
-	return
+	return &Processor{
+		projectID:      config.ProjectID,
+		authentication: config.DialogflowAuth,
+		language:       config.Language,
+		timezone:       config.Timezone,
+		sessionClient:  sessionClient,
+	}
 }
 
 func (p *Processor) CreateOrRecreateIntents() error {
