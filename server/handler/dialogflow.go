@@ -25,7 +25,7 @@ func Dialogflow(r chi.Router) {
 func createDialogflowIntents(w http.ResponseWriter, r *http.Request) {
 	render.Status(r, http.StatusOK)
 	ctx := context.New(r)
-	dp := (&dialogflow.Processor{}).NewSession()
+	dp := dialogflow.NewSession()
 	if err := dp.CreateOrRecreateIntents(); err != nil {
 		log.Errorf(ctx, err.Error())
 		_ = render.Render(w, r, e.ErrRender(ctx, err))

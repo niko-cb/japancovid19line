@@ -27,19 +27,22 @@ type Processor struct {
 	ctx            context.Context
 }
 
-func (p *Processor) NewSession() *Processor {
+var p Processor
+
+func NewSession() Processor {
 	config := env.Get()
 	sessionClient, err := dialogflow.NewSessionsClient(p.ctx, option.WithCredentialsJSON([]byte(config.DialogflowAuth)))
 	if err != nil {
 		log.Fatalf("Failed to authenticate with Dialogflow: %v", err)
 	}
-	return &Processor{
-		projectID:      config.ProjectID,
-		authentication: config.DialogflowAuth,
-		language:       config.Language,
-		timezone:       config.Timezone,
-		sessionClient:  sessionClient,
-	}
+
+	p.projectID = config.ProjectID
+	p.authentication = config.DialogflowAuth
+	p.language = config.Language
+	p.timezone = config.Timezone
+	p.sessionClient = sessionClient
+
+	return p
 }
 
 func (p *Processor) CreateOrRecreateIntents() error {
