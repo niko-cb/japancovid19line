@@ -9,9 +9,9 @@ import (
 
 	"github.com/niko-cb/covid19datascraper/server/env"
 
-	"github.com/niko-cb/covid19datascraper/server/datastore"
-
 	dialogflow "cloud.google.com/go/dialogflow/apiv2"
+	ctx "github.com/niko-cb/covid19datascraper/server/context"
+	"github.com/niko-cb/covid19datascraper/server/datastore"
 	"github.com/niko-cb/covid19datascraper/server/model"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -31,7 +31,7 @@ var p Processor
 
 func NewSession() Processor {
 	config := env.Get()
-	sessionClient, err := dialogflow.NewSessionsClient(p.ctx, option.WithCredentialsJSON([]byte(config.DialogflowAuth)))
+	sessionClient, err := dialogflow.NewSessionsClient(ctx.Get(), option.WithCredentialsJSON([]byte(config.DialogflowAuth)))
 	if err != nil {
 		log.Fatalf("Failed to authenticate with Dialogflow: %v", err)
 	}
