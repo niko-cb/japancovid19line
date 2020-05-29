@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/niko-cb/covid19datascraper/server/env"
 
@@ -69,7 +68,6 @@ func (p *Processor) CreateDataIntents() error {
 	}
 	for _, data := range pData {
 		// 1 second sleep in order to prevent hitting the request limit
-		time.Sleep(1 * time.Second)
 		intent := (&Intent{}).Make(p.parent, nil, data, sd)
 		request := createIntentRequest(intent)
 		_, requestErr := p.intentsClient.CreateIntent(p.ctx, &request)
@@ -100,7 +98,6 @@ func (p *Processor) DeleteIntents() error {
 		return err
 	}
 	for _, intent := range dfIntents {
-		time.Sleep(1 * time.Second)
 		route := strings.Split(intent.GetName(), "/")
 		intentID := route[len(route)-1]
 		targetPath := fmt.Sprintf("projects/%s/agent/intents/%s", p.projectID, intentID)
