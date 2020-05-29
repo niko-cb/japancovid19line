@@ -10,8 +10,9 @@ import (
 
 func NewClient() (*datastore.Client, error) {
 	ctx := context.Get()
-	dsJSON := env.AuthDatastore()
-	projectID := env.ProjectID()
+	config := env.Get()
+	dsJSON := config.DatastoreAuth
+	projectID := config.ProjectID
 	if c, err := datastore.NewClient(ctx, projectID, option.WithCredentialsJSON([]byte(dsJSON))); err != nil {
 		return nil, err
 	} else {
@@ -25,4 +26,8 @@ func DataKind() string {
 
 func DateKind() string {
 	return "SourceDate"
+}
+
+func DateName() string {
+	return "Latest"
 }
