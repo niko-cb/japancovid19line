@@ -19,11 +19,11 @@ func (i *Intent) Make(parent string, cs *model.Symptoms, p *model.PrefectureData
 	var trainingPhraseParts []string
 
 	if cs != nil {
-		displayName := "症状"
+		displayName = "症状"
 		trainingPhraseParts = append(trainingPhraseParts, displayName)
 		messageTexts = append(messageTexts, NewSMessage(cs).Content.String())
 	} else if p != nil {
-		displayName := p.Prefecture
+		displayName = p.Prefecture
 		trainingPhraseParts = append(trainingPhraseParts, displayName)
 		cities := cityMap(p.ConfirmedByCity)
 		messageTexts = append(messageTexts, NewPMessage(p, sd.Date, cities).Content.String())
