@@ -24,6 +24,8 @@ type Processor struct {
 	language       string
 	timezone       string
 	sessionClient  *dialogflow.SessionsClient
+	intentsClient  *dialogflow.IntentsClient
+	parent         string
 	ctx            context.Context
 }
 
@@ -35,58 +37,42 @@ func NewSession() Processor {
 	if err != nil {
 		log.Fatalf("Failed to authenticate with Dialogflow: %v", err)
 	}
+	intentsClient, err := dialogflow.NewIntentsClient(ctx.Get(), option.WithCredentialsJSON([]byte(config.DialogflowAuth)))
+	if err != nil {
+		log.Fatalf("Failed to authenticate with Dialogflow: %v", err)
+	}
 
 	p.projectID = config.ProjectID
 	p.authentication = config.DialogflowAuth
 	p.language = config.Language
 	p.timezone = config.Timezone
 	p.sessionClient = sessionClient
+	p.intentsClient = intentsClient
+	p.parent = fmt.Sprintf("projects/%s/agent", p.projectID)
 	p.ctx = ctx.Get()
 
 	return p
 }
 
-func (p *Processor) CreateOrRecreateIntents() error {
-	ctx := p.ctx
-	intentsClient, clientErr := dialogflow.NewIntentsClient(ctx, option.WithCredentialsJSON([]byte(p.authentication)))
-	if clientErr != nil {
-		return clientErr
-	}
-	defer intentsClient.Close()
-	parent := fmt.Sprintf("projects/%s/agent", p.projectID)
-
-	if err := deleteIntents(ctx, intentsClient, p.projectID, parent); err != nil {
-		return err
-	}
-	if err := addPrefectureDataIntents(ctx, intentsClient, parent); err != nil {
-		return err
-	}
-	if err := addCoronavirusSymptomsIntent(ctx, intentsClient, parent); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func addPrefectureDataIntents(ctx context.Context, intentsClient *dialogflow.IntentsClient, parent string) error {
+func (p *Processor) CreateDataIntents() error {
 	dsClient, err := datastore.NewClient()
 	if err != nil {
 		return err
 	}
-	pData, err := model.GetPrefectureData(ctx, dsClient, datastore.DataKind())
+	pData, err := model.GetPrefectureData(p.ctx, dsClient, datastore.DataKind())
 	if err != nil {
 		return err
 	}
-	sd, err := model.GetDateFromDatastore(ctx, dsClient, datastore.DateKind())
+	sd, err := model.GetDateFromDatastore(p.ctx, dsClient, datastore.DateKind())
 	if err != nil {
 		return err
 	}
-	for _, p := range pData {
+	for _, data := range pData {
 		// 1 second sleep in order to prevent hitting the request limit
 		time.Sleep(1 * time.Second)
-		intent := (&Intent{}).Make(parent, nil, p, sd)
+		intent := (&Intent{}).Make(p.parent, nil, data, sd)
 		request := createIntentRequest(intent)
-		_, requestErr := intentsClient.CreateIntent(ctx, &request)
+		_, requestErr := p.intentsClient.CreateIntent(p.ctx, &request)
 		log.Println(&request)
 		if requestErr != nil {
 			return requestErr
@@ -95,15 +81,35 @@ func addPrefectureDataIntents(ctx context.Context, intentsClient *dialogflow.Int
 	return nil
 }
 
-func addCoronavirusSymptomsIntent(ctx context.Context, intentsClient *dialogflow.IntentsClient, parent string) error {
+func (p *Processor) CreateSymptomIntents() error {
 	cs := model.GetCoronavirusSymptoms()
-	intent := (&Intent{}).Make(parent, cs, nil, nil)
+	intent := (&Intent{}).Make(p.parent, cs, nil, nil)
 	request := createIntentRequest(intent)
 
-	_, requestErr := intentsClient.CreateIntent(ctx, &request)
+	_, requestErr := p.intentsClient.CreateIntent(p.ctx, &request)
 	log.Println(&request)
 	if requestErr != nil {
 		return requestErr
+	}
+	return nil
+}
+
+func (p *Processor) DeleteIntents() error {
+	dfIntents, err := listIntents(p.ctx, p.intentsClient, p.parent)
+	if err != nil {
+		return err
+	}
+	for _, intent := range dfIntents {
+		time.Sleep(1 * time.Second)
+		route := strings.Split(intent.GetName(), "/")
+		intentID := route[len(route)-1]
+		targetPath := fmt.Sprintf("projects/%s/agent/intents/%s", p.projectID, intentID)
+		request := dialogflowpb.DeleteIntentRequest{Name: targetPath}
+
+		requestErr := p.intentsClient.DeleteIntent(p.ctx, &request)
+		if requestErr != nil {
+			return requestErr
+		}
 	}
 	return nil
 }
@@ -119,26 +125,6 @@ func listIntents(ctx context.Context, intentsClient *dialogflow.IntentsClient, p
 	}
 
 	return intents, nil
-}
-
-func deleteIntents(ctx context.Context, intentsClient *dialogflow.IntentsClient, projectID, parent string) error {
-	dfIntents, err := listIntents(ctx, intentsClient, parent)
-	if err != nil {
-		return err
-	}
-	for _, intent := range dfIntents {
-		time.Sleep(1 * time.Second)
-		route := strings.Split(intent.GetName(), "/")
-		intentID := route[len(route)-1]
-		targetPath := fmt.Sprintf("projects/%s/agent/intents/%s", projectID, intentID)
-		request := dialogflowpb.DeleteIntentRequest{Name: targetPath}
-
-		requestErr := intentsClient.DeleteIntent(ctx, &request)
-		if requestErr != nil {
-			return requestErr
-		}
-	}
-	return nil
 }
 
 func createIntentRequest(intent *Intent) dialogflowpb.CreateIntentRequest {

@@ -14,20 +14,44 @@ import (
 )
 
 const (
-	DialogflowAPIBasePath   = "/dialogflow"
-	dialogflowCreateAPIPath = "/createIntents"
+	DialogflowAPIBasePath           = "/dialogflow"
+	dialogflowCreateDataAPIPath     = "/createData"
+	dialogflowCreateSymptomsAPIPath = "/createSymptoms"
+	dialogflowDeleteAPIPath         = "/delete"
 )
 
 func Dialogflow(r chi.Router) {
-	r.Get(dialogflowCreateAPIPath, createDialogflowIntents)
+	r.Get(dialogflowCreateDataAPIPath, createDataIntents)
+	r.Get(dialogflowCreateSymptomsAPIPath, createSymptomIntents)
+	r.Delete(dialogflowDeleteAPIPath, deleteIntents)
 }
 
-func createDialogflowIntents(w http.ResponseWriter, r *http.Request) {
-	render.Status(r, http.StatusOK)
+func createDataIntents(w http.ResponseWriter, r *http.Request) {
 	ctx := context.New(r)
 	dp := dialogflow.NewSession()
-	if err := dp.CreateOrRecreateIntents(); err != nil {
+	if err := dp.CreateDataIntents(); err != nil {
 		log.Errorf(ctx, err.Error())
 		_ = render.Render(w, r, e.ErrRender(ctx, err))
 	}
+	render.Status(r, http.StatusOK)
+}
+
+func createSymptomIntents(w http.ResponseWriter, r *http.Request) {
+	ctx := context.New(r)
+	dp := dialogflow.NewSession()
+	if err := dp.CreateSymptomIntents(); err != nil {
+		log.Errorf(ctx, err.Error())
+		_ = render.Render(w, r, e.ErrRender(ctx, err))
+	}
+	render.Status(r, http.StatusOK)
+}
+
+func deleteIntents(w http.ResponseWriter, r *http.Request) {
+	ctx := context.New(r)
+	dp := dialogflow.NewSession()
+	if err := dp.DeleteIntents(); err != nil {
+		log.Errorf(ctx, err.Error())
+		_ = render.Render(w, r, e.ErrRender(ctx, err))
+	}
+	render.Status(r, http.StatusOK)
 }
