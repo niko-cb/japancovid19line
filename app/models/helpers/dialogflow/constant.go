@@ -8,7 +8,7 @@ const (
 	TodayConfirmedPrefix     = "\n今日の検査陽性者:  "
 	YesterdayConfirmedPrefix = "\n昨日の検査陽性者:  "
 	RecoveredPrefix          = "\n回復者:   "
-	DeathsPrefix             = "死者:   "
+	DeathsPrefix             = "\n死者:   "
 	CitiesPrefix             = "\n\n[市町村の公開データ]\n"
 
 	// Symptoms Message

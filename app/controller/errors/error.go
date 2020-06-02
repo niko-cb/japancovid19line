@@ -1,10 +1,8 @@
-package error
+package errors
 
 import (
 	"context"
 	"net/http"
-
-	"github.com/niko-cb/covid19datascraper/server/log"
 
 	"github.com/go-chi/render"
 )
@@ -32,7 +30,7 @@ func (e *ErrNotFoundSetMsg) Error() string {
 }
 
 func ErrInternalServerError(ctx context.Context, err error) render.Renderer {
-	log.LogError(ctx, err)
+	LogError(ctx, err)
 	return &ErrResponse{
 		Err:            err,
 		HTTPStatusCode: http.StatusInternalServerError,
@@ -42,7 +40,7 @@ func ErrInternalServerError(ctx context.Context, err error) render.Renderer {
 }
 
 func ErrRender(ctx context.Context, err error) render.Renderer {
-	log.LogError(ctx, err)
+	LogError(ctx, err)
 	return &ErrResponse{
 		Err:            err,
 		HTTPStatusCode: http.StatusUnprocessableEntity,
