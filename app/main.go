@@ -30,6 +30,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
 	r.Use(middleware.SetHeader("Cache-Control", "no-store"))
+	r.Use(middleware.SetHeader("Strict-Transport-Security", "max-age=2592000"))
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 
 	c := cors.New(cors.Options{
