@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/niko-cb/covid19datascraper/server/handler"
+	"github.com/niko-cb/japancovid19line/app/controller/handler"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -30,6 +30,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
 	r.Use(middleware.SetHeader("Cache-Control", "no-store"))
+	r.Use(middleware.SetHeader("Strict-Transport-Security", "max-age=2592000"))
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 
 	c := cors.New(cors.Options{

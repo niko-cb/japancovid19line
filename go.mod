@@ -1,4 +1,4 @@
-module github.com/niko-cb/covid19datascraper
+module github.com/niko-cb/japancovid19line
 
 go 1.12
 
