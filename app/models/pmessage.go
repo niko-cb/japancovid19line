@@ -1,6 +1,6 @@
 package models
 
-import "github.com/niko-cb/covid19datascraper/app/models/helpers/dialogflow"
+import "github.com/niko-cb/japancovid19line/app/models/helpers/dialogflow"
 
 // PMessage: the P stands for Prefecture
 type PMessage struct {

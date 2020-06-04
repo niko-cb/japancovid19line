@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"cloud.google.com/go/datastore"
-	ds "github.com/niko-cb/covid19datascraper/app/config/datastore"
-	"github.com/niko-cb/covid19datascraper/app/models"
+	ds "github.com/niko-cb/japancovid19line/app/config/datastore"
+	"github.com/niko-cb/japancovid19line/app/models"
 )
 
 // updateDatastore updates Datastore with the new Prefecture and Date data

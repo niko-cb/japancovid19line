@@ -3,8 +3,8 @@ package scrape
 import (
 	"encoding/json"
 
-	"github.com/niko-cb/covid19datascraper/app/models"
-	"github.com/niko-cb/covid19datascraper/app/models/helpers/prefectures"
+	"github.com/niko-cb/japancovid19line/app/models"
+	"github.com/niko-cb/japancovid19line/app/models/helpers/prefectures"
 )
 
 // formatData takes the response and turns it into a Prefecture Data struct slice
