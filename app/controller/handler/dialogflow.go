@@ -30,7 +30,7 @@ func createDataIntents(w http.ResponseWriter, r *http.Request) {
 	dp := models.NewSession()
 	if err := dp.CreateDataIntents(); err != nil {
 		errors.Errorf(ctx, err.Error())
-		_ = render.Render(w, r, errors.ErrRender(ctx, err))
+		_ = render.Render(w, r, errors.ErrInternalServerError(ctx, err))
 	}
 	render.Status(r, http.StatusOK)
 }
@@ -40,7 +40,7 @@ func createSymptomIntents(w http.ResponseWriter, r *http.Request) {
 	dp := models.NewSession()
 	if err := dp.CreateSymptomIntents(); err != nil {
 		errors.Errorf(ctx, err.Error())
-		_ = render.Render(w, r, errors.ErrRender(ctx, err))
+		_ = render.Render(w, r, errors.ErrInternalServerError(ctx, err))
 	}
 	render.Status(r, http.StatusOK)
 }
@@ -50,7 +50,7 @@ func deleteIntents(w http.ResponseWriter, r *http.Request) {
 	dp := models.NewSession()
 	if err := dp.DeleteIntents(); err != nil {
 		errors.Errorf(ctx, err.Error())
-		_ = render.Render(w, r, errors.ErrRender(ctx, err))
+		_ = render.Render(w, r, errors.ErrInternalServerError(ctx, err))
 	}
 	render.Status(r, http.StatusOK)
 }

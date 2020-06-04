@@ -25,7 +25,7 @@ func scrapeData(w http.ResponseWriter, r *http.Request) {
 	ctx := context.New(r)
 	if err := scrape.Do(ctx); err != nil {
 		errors.Errorf(ctx, err.Error())
-		_ = render.Render(w, r, errors.ErrRender(ctx, err))
+		_ = render.Render(w, r, errors.ErrInternalServerError(ctx, err))
 		return
 	}
 	render.Status(r, http.StatusOK)
