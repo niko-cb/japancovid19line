@@ -1,8 +1,8 @@
 package datastore
 
 import (
-	"github.com/niko-cb/covid19datascraper/server/context"
-	"github.com/niko-cb/covid19datascraper/server/env"
+	"github.com/niko-cb/covid19datascraper/app/config/context"
+	"github.com/niko-cb/covid19datascraper/app/config/env"
 
 	"cloud.google.com/go/datastore"
 	"google.golang.org/api/option"

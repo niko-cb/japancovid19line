@@ -1,4 +1,4 @@
-package dialogflow
+package models
 
 import (
 	"context"
@@ -6,13 +6,13 @@ import (
 	"log"
 	"strings"
 
-	"github.com/niko-cb/covid19datascraper/server/env"
+	"google.golang.org/api/iterator"
+
+	"github.com/niko-cb/covid19datascraper/app/config/env"
 
 	dialogflow "cloud.google.com/go/dialogflow/apiv2"
-	ctx "github.com/niko-cb/covid19datascraper/server/context"
-	"github.com/niko-cb/covid19datascraper/server/datastore"
-	"github.com/niko-cb/covid19datascraper/server/model"
-	"google.golang.org/api/iterator"
+	ctx "github.com/niko-cb/covid19datascraper/app/config/context"
+	"github.com/niko-cb/covid19datascraper/app/config/datastore"
 	"google.golang.org/api/option"
 	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 )
@@ -32,6 +32,7 @@ var p Processor
 
 func NewSession() Processor {
 	config := env.Get()
+
 	sessionClient, err := dialogflow.NewSessionsClient(ctx.Get(), option.WithCredentialsJSON([]byte(config.DialogflowAuth)))
 	if err != nil {
 		log.Fatalf("Failed to authenticate with Dialogflow: %v", err)
@@ -58,17 +59,17 @@ func (p *Processor) CreateDataIntents() error {
 	if err != nil {
 		return err
 	}
-	pData, err := model.GetPrefectureData(p.ctx, dsClient, datastore.DataKind())
+	pData, err := GetPrefectureData(p.ctx, dsClient, datastore.DataKind())
 	if err != nil {
 		return err
 	}
-	sd, err := model.GetDateFromDatastore(p.ctx, dsClient, datastore.DateKind())
+	sd, err := GetDateFromDatastore(p.ctx, dsClient, datastore.DateKind())
 	if err != nil {
 		return err
 	}
 	for _, data := range pData {
 		// 1 second sleep in order to prevent hitting the request limit
-		intent := (&Intent{}).Make(p.parent, nil, data, sd)
+		intent := (&Intent{}).Prefecture(p.parent, data, sd)
 		request := createIntentRequest(intent)
 		_, requestErr := p.intentsClient.CreateIntent(p.ctx, &request)
 		log.Println(&request)
@@ -80,8 +81,8 @@ func (p *Processor) CreateDataIntents() error {
 }
 
 func (p *Processor) CreateSymptomIntents() error {
-	cs := model.GetCoronavirusSymptoms()
-	intent := (&Intent{}).Make(p.parent, cs, nil, nil)
+	cs := (&Symptoms{}).Get()
+	intent := (&Intent{}).Symptoms(p.parent, cs)
 	request := createIntentRequest(intent)
 
 	_, requestErr := p.intentsClient.CreateIntent(p.ctx, &request)

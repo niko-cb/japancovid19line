@@ -1,4 +1,4 @@
-package model
+package models
 
 type CovidDataRes struct {
 	Prefectures []PrefectureInfo `json:"prefectures"`
