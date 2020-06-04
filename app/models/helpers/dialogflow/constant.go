@@ -5,6 +5,7 @@ const (
 	DateSuffix               = "までの情報です\n"
 	PrefecturePrefix         = "\n都道府県名:   "
 	CasesPrefix              = "\n検査陽性者(今まで):   "
+	ActiveCasesPrefix        = "\n検査陽性者(現在):   "
 	TodayConfirmedPrefix     = "\n今日の検査陽性者:  "
 	YesterdayConfirmedPrefix = "\n昨日の検査陽性者:  "
 	RecoveredPrefix          = "\n回復者:   "
