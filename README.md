@@ -1,2 +1,2 @@
-# covid19datascraper
-# covid19datascraper
+# japancovid19line
+# japancovid19line

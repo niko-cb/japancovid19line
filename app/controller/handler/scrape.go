@@ -3,12 +3,12 @@ package handler
 import (
 	"net/http"
 
-	"github.com/niko-cb/covid19datascraper/app/controller/errors"
+	"github.com/niko-cb/japancovid19line/app/controller/errors"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
-	"github.com/niko-cb/covid19datascraper/app/config/context"
-	"github.com/niko-cb/covid19datascraper/app/controller/logic/scrape"
+	"github.com/niko-cb/japancovid19line/app/config/context"
+	"github.com/niko-cb/japancovid19line/app/controller/logic/scrape"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/niko-cb/covid19datascraper/app/controller/handler"
+	"github.com/niko-cb/japancovid19line/app/controller/handler"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"

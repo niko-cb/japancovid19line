@@ -3,10 +3,10 @@ package handler
 import (
 	"net/http"
 
-	"github.com/niko-cb/covid19datascraper/app/models"
+	"github.com/niko-cb/japancovid19line/app/models"
 
-	"github.com/niko-cb/covid19datascraper/app/config/context"
-	"github.com/niko-cb/covid19datascraper/app/controller/errors"
+	"github.com/niko-cb/japancovid19line/app/config/context"
+	"github.com/niko-cb/japancovid19line/app/controller/errors"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"

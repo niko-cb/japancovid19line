@@ -8,11 +8,11 @@ import (
 
 	"google.golang.org/api/iterator"
 
-	"github.com/niko-cb/covid19datascraper/app/config/env"
+	"github.com/niko-cb/japancovid19line/app/config/env"
 
 	dialogflow "cloud.google.com/go/dialogflow/apiv2"
-	ctx "github.com/niko-cb/covid19datascraper/app/config/context"
-	"github.com/niko-cb/covid19datascraper/app/config/datastore"
+	ctx "github.com/niko-cb/japancovid19line/app/config/context"
+	"github.com/niko-cb/japancovid19line/app/config/datastore"
 	"google.golang.org/api/option"
 	dialogflowpb "google.golang.org/genproto/googleapis/cloud/dialogflow/v2"
 )

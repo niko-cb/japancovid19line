@@ -3,7 +3,7 @@ package models
 import (
 	"strings"
 
-	"github.com/niko-cb/covid19datascraper/app/models/helpers/dialogflow"
+	"github.com/niko-cb/japancovid19line/app/models/helpers/dialogflow"
 )
 
 // SMessage: the S stands for Symptom
