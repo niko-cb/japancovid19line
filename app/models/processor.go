@@ -68,7 +68,6 @@ func (p *Processor) CreateDataIntents() error {
 		return err
 	}
 	for _, data := range pData {
-		// 1 second sleep in order to prevent hitting the request limit
 		intent := (&Intent{}).Prefecture(p.parent, data, sd)
 		request := createIntentRequest(intent)
 		_, requestErr := p.intentsClient.CreateIntent(p.ctx, &request)
