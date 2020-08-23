@@ -26,7 +26,7 @@ func formatData(bytes []byte) ([]*models.PrefectureData, error) {
 			}
 
 			prefectureData := models.NewPrefectureData(p.NameJA, p.Confirmed,
-				p.Deaths, p.Recovered, p.NewlyConfirmed,
+				p.Recovered, p.Deaths, p.NewlyConfirmed,
 				p.YesterdayConfirmed, string(cities))
 
 			pData = append(pData, prefectureData)
