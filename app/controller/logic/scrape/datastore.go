@@ -16,11 +16,11 @@ func updateDatastore(ctx context.Context, data []*models.PrefectureData, date st
 	}
 
 	if err := updatePrefectureData(ctx, c, data); err != nil {
-		return nil
+		return err
 	}
 
 	if err := updateSourceDate(ctx, c, date); err != nil {
-		return nil
+		return err
 	}
 
 	return nil

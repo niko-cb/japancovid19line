@@ -12,7 +12,7 @@ func Do(ctx context.Context) error {
 
 	dataBytes, err := readJSONFromURL(covidDataJSON + latest)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	prefData, err := formatData(dataBytes)
