@@ -2,6 +2,7 @@ package models
 
 type CovidDataRes struct {
 	Prefectures []PrefectureInfo `json:"prefectures"`
+	Updated     string           `json:"updated"`
 }
 
 type PrefectureInfo struct {

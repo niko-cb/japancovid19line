@@ -8,10 +8,10 @@ import (
 )
 
 // formatData takes the response and turns it into a Prefecture Data struct slice
-func formatData(bytes []byte) ([]*models.PrefectureData, error) {
+func formatData(bytes []byte) ([]*models.PrefectureData, string, error) {
 	var res *models.CovidDataRes
 	if err := json.Unmarshal(bytes, &res); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	var pData []*models.PrefectureData
@@ -22,7 +22,7 @@ func formatData(bytes []byte) ([]*models.PrefectureData, error) {
 		if p.NameJA != "" {
 			cities, err := json.Marshal(p.ConfirmedByCity)
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 
 			prefectureData := models.NewPrefectureData(p.NameJA, p.Confirmed,
@@ -32,5 +32,5 @@ func formatData(bytes []byte) ([]*models.PrefectureData, error) {
 			pData = append(pData, prefectureData)
 		}
 	}
-	return pData, nil
+	return pData, res.Updated, nil
 }
