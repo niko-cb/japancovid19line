@@ -2,25 +2,24 @@ package scrape
 
 import (
 	"context"
+	"strings"
 )
 
 func Do(ctx context.Context) error {
-	latest, err := getLatestJson()
+	latestDataString, err := readJSONFromLatestURL()
 	if err != nil {
 		return err
 	}
 
-	dataBytes, err := readJSONFromURL(covidDataJSON + latest)
+	prefData, date, err := formatData([]byte(latestDataString))
 	if err != nil {
 		return err
 	}
 
-	prefData, err := formatData(dataBytes)
-	if err != nil {
-		return err
+	if date != "" {
+		date = strings.Split(date, "T")[0]
 	}
 
-	date := latest[:10]
 	if err := updateDatastore(ctx, prefData, date); err != nil {
 		return err
 	}
