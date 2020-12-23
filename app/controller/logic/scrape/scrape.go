@@ -6,12 +6,12 @@ import (
 )
 
 func Do(ctx context.Context) error {
-	latest, err := getLatestJson()
+	latestDataString, err := readJSONFromLatestURL()
 	if err != nil {
 		return err
 	}
 
-	prefData, date, err := formatData([]byte(latest))
+	prefData, date, err := formatData([]byte(latestDataString))
 	if err != nil {
 		return err
 	}
