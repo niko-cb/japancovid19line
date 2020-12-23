@@ -7,7 +7,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// getLatestJson gets the latest file name (in date format - e.g. 2020-04-01.json)
+// getLatestJson gets the latest json data from the latest url
 func getLatestJson() (string, error) {
 	res, err := http.Get(covidDataJSONLatestURL)
 	if err != nil {
